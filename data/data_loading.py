@@ -56,7 +56,7 @@ def mol_to_inchikey(mol_list):
 
 def main():
     # Load chemical data
-    df = PandasTools.LoadSDF("chemdata/data/ChEBI_complete_3star_20240601.sdf")
+    df = PandasTools.LoadSDF("chemdata/ChEBI_complete_3star_20240601.sdf")
     data_df = df[["ChEBI Name", "ROMol"]].rename(columns={"ChEBI Name":"NAME"})
     
     # Generate InChIKeys
