@@ -44,16 +44,16 @@ def main():
     
     # Add property columns for multiple chemical roles
     properties = {
-        "antioxidant": "data/ChEBI_antioxidant.sdf",
-        "anti_inflammatory": "data/ChEBI_anti_inflammatory_agent.sdf",
-        "allergen": "data/ChEBI_allergen.sdf",
-        "dye": "data/ChEBI_dye.sdf",
-        "toxin": "data/ChEBI_toxin.sdf",
-        "flavouring_agent": "data/ChEBI_flavouring_agent.sdf",
-        "agrochemical": "data/ChEBI_agrochemical.sdf",
-        "volatile_oil": "data/ChEBI_volatile_oil_component.sdf",
-        "antibacterial_agent": "data/ChEBI_antibacterial_agent.sdf",
-        "insecticide": "data/ChEBI_insecticide.sdf"
+        "antioxidant": "chemdata/ChEBI_antioxidant.sdf",
+        "anti_inflammatory": "chemdata/ChEBI_anti_inflammatory_agent.sdf",
+        "allergen": "chemdata/ChEBI_allergen.sdf",
+        "dye": "chemdata/ChEBI_dye.sdf",
+        "toxin": "chemdata/ChEBI_toxin.sdf",
+        "flavouring_agent": "chemdata/ChEBI_flavouring_agent.sdf",
+        "agrochemical": "chemdata/ChEBI_agrochemical.sdf",
+        "volatile_oil": "chemdata/ChEBI_volatile_oil_component.sdf",
+        "antibacterial_agent": "chemdata/ChEBI_antibacterial_agent.sdf",
+        "insecticide": "chemdata/ChEBI_insecticide.sdf"
     }
     
     for property_name, sdf_path in properties.items():
