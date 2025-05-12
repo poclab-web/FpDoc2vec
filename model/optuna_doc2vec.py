@@ -8,6 +8,7 @@ from sklearn.preprocessing import StandardScaler
 from multiprocessing import Pool, cpu_count
 from tqdm import tqdm
 import optuna
+import optunahub
 
 def add_vectors(fingerprint_df, model):
     """Combine document vectors based on fingerprints"""
@@ -118,7 +119,8 @@ class ProgressCallback:
 
 def optimize_doc2vec(n_trials):
     """Main optimization function"""
-    study = optuna.create_study(direction='maximize')
+    module = optunahub.load_module(package="samplers/auto_sampler")
+    study = optuna.create_study(direction='maximize', sampler=module.AutoSampler())
     study.optimize(objective, n_trials=n_trials, callbacks=[ProgressCallback(n_trials)])
 
     print("\nBest trial:")
