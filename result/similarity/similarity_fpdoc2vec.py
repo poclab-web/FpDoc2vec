@@ -71,7 +71,7 @@ def get_top_similar_compounds(df, target_compound, n=10):
 def main():
     """Load data and model, then find compounds similar to sucrose."""
     # Load dataset
-    with open("chemdata/10genre_predict.pkl", "rb") as f:
+    with open("../../data/10genre_predict.pkl", "rb") as f:
         df = pickle.load(f)
     
     # Add compound names as a separate column
@@ -79,7 +79,7 @@ def main():
     
     # Get fingerprints and load model
     finger_list = list(df["fp_3_4096"])
-    model = Doc2Vec.load("model/20250303_fp4096.model")
+    model = Doc2Vec.load("../../model/fpdoc2vec4096.model")
     
     # Generate compound vectors
     compound_vec = addvec(finger_list, model)
