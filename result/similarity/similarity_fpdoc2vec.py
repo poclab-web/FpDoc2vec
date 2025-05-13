@@ -71,7 +71,7 @@ def get_top_similar_compounds(df, target_compound, n=10):
 def main():
     """Load data and model, then find compounds similar to sucrose."""
     # Load dataset
-    with open("../../data/10genre_predict.pkl", "rb") as f:
+    with open("../../data/10genre_dataset.pkl", "rb") as f:
         df = pickle.load(f)
     
     # Add compound names as a separate column
