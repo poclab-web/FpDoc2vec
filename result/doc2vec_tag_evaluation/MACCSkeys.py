@@ -91,7 +91,7 @@ def evaluate_with_maccs(df, df_maccs, X_vec_maccs, categories, index_mapping):
 
 def main():
     # Load dataset
-    with open("chemdata/10genre_predict.pkl", "rb") as f:
+    with open("../../data/10genre_dataset.pkl", "rb") as f:
         df = pickle.load(f)
     
     # Generate MACCS fingerprints
