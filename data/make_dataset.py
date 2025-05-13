@@ -20,6 +20,22 @@ def add_property_column(df, property_name, sdf_path):
     df[property_name] = [property_name if i in list(property_df['inchikey']) else "No" for i in df["inchikey"]]
     return df
 
+def generate_morgan_fingerprints(df):
+    """
+    Generate Morgan fingerprints (ECFP6) with radius 3 and 4096 bits for molecules in the dataframe.
+    Returns a list of the bit positions that are set to 1 for each molecule.
+    """
+    fingerprints = []
+    for i, mol in enumerate(df["ROMol"]):
+        try:
+            fingerprint = [j for j in AllChem.GetMorganFingerprintAsBitVect(mol, 3, 4096)]
+            fingerprints.append(fingerprint)
+        except:
+            print("Error", i)
+            continue
+    fingerprints = np.array(fingerprints)
+    return [[j for j in range(4096) if i[j] == 1] for i in fingerprints]
+
 def main():
     # Load previously processed data
     with open("3starAll_text_ver2.pkl", "rb") as f:
