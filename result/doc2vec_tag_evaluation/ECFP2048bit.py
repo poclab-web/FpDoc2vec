@@ -27,12 +27,13 @@ def add_vec(fingerprint_list, model):
     Generate compound vectors by combining fingerprints with doc2vec model
     """
     compound_vec = []
-  for i in fingerprint_df:
-    fingerprint_vec = 0
-    for j in i:
-      fingerprint_vec += model.dv.vectors[j]
-    compound_vec.append(fingerprint_vec)
-  return compound_vec
+    for i in fingerprint_df:
+        fingerprint_vec = 0
+        for j in i:
+            fingerprint_vec += model.dv.vectors[j]
+        compound_vec.append(fingerprint_vec)
+        
+    return compound_vec
 
 def evaluate_category(category, X_vec, y, lightgbm_model):
     """
@@ -134,7 +135,7 @@ def main():
     model = build_doc2vec_model(corpus, finger_list)
     
     # Generate compound vectors
-    compound_vec = add_vectors(finger_list, model)
+    compound_vec = add_vec(finger_list, model)
     X_vec = np.array([compound_vec[i] for i in range(len(df))])
     
     # Create classifier
