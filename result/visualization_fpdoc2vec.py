@@ -69,11 +69,11 @@ def plot_chemical_categories(df, dim_df, categories, categories_display, output_
 
 def main():
     # Load the dataset
-    df = load_data("data/10genre_dataset.pkl")
+    df = load_data("../../data/10genre_dataset.pkl")
     
     # Extract fingerprints and load Doc2Vec model
     finger_list = list(df["fp_3_4096"])
-    model = Doc2Vec.load("model/fpdoc2vec4096.model")
+    model = Doc2Vec.load("../../model/fpdoc2vec4096.model")
     
     # Generate compound vectors
     compound_vec = addvec(finger_list, model)
