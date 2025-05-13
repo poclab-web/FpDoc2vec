@@ -82,8 +82,8 @@ def plot_chemical_categories(df, dim_df, categories, display_names, output_file=
 
 def main():
     # Load dataset and model
-    df = load_data("data/10genre_predict.pkl")
-    model = Doc2Vec.load("model/namedoc2vec.model")
+    df = load_data("../../data/10genre_predict.pkl")
+    model = Doc2Vec.load("../../model/namedoc2vec.model")
     
     # Extract vectors from Doc2Vec model
     vec = load_doc2vec_vectors(model, len(df))
