@@ -123,19 +123,48 @@ def finger(df):
   fingerprints = np.array(fingerprints)
   return fingerprints
 
+def create_lightgbm_classifier():
+    """
+    Create and configure LightGBM classifier with optimized parameters
+    """
+    return lgb.LGBMClassifier(
+        boosting_type="dart", 
+        n_estimators=444, 
+        learning_rate=0.07284380689492893, 
+        max_depth=6, 
+        num_leaves=41, 
+        min_child_samples=21, 
+        class_weight="balanced", 
+        reg_alpha=1.4922729949843299, 
+        reg_lambda=2.8809246344115778, 
+        colsample_bytree=0.5789063337359206, 
+        subsample=0.5230422589468584, 
+        subsample_freq=2, 
+        drop_rate=0.1675163179873052, 
+        skip_drop=0.49103811434109507, 
+        objective='binary', 
+        random_state=50
+    )
+
 if __name__ == "__main__":
 
   # data loding
   with open("../../data/10genre_dataset.pkl", "rb") as f:
     df = pickle.load(f)
   model = Doc2Vec.load("../../model/fpdoc2vec4096.model")
-  lightgbm = lgb.LGBMClassifier(boosting_type = "dart", n_estimators = 444, learning_rate = 0.07284380689492893, max_depth = 6, num_leaves=41, min_child_samples=21, class_weight="balanced", reg_alpha = 1.4922729949843299, reg_lambda = 2.8809246344115778, colsample_bytree=0.5789063337359206, subsample=0.5230422589468584, subsample_freq=2, drop_rate=0.1675163179873052, skip_drop=0.49103811434109507, objective='binary', random_state = 50)
+
+  lightgbm = create_lightgbm_classifier()
   pipeline, masker = shap_variables(model.dv.vectors, lightgbm)
-  
+
+  # Specify the target biological role here
+  # This example uses "antioxidant". To analyze other roles, replace "antioxidant" with:
+  # "anti-inflammatory agent", "allergen", "dye", "toxin", "flavouring agent", 
+  # "agrochemical", "volatile oil", "antibacterial agent", or "insecticide"
+ 
   y = np.array([1 if i == 'antioxidant' else 0 for i in df['antioxidant']])
   fingerprint = finger(df)
   pipeline.fit(fingerprint, y) 
   explainer = shap.Explainer(lambda x: pipeline.predict_proba(x)[:, 1], masker=masker)
   value = explainer(a, max_evals=500000)
-  with open('result/SHAP/antioxidant2_xor500000.pkl', 'wb') as f:
+  with open('antioxidant_xor500000.pkl', 'wb') as f:
     pickle.dump(value, f)
