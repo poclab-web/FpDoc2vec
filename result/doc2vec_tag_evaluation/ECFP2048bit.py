@@ -22,14 +22,17 @@ def generate_morgan_fingerprints(df):
     fingerprints = np.array(fingerprints)
     return [[j for j in range(2048) if i[j] == 1] for i in fingerprints]
 
-def add_vectors(fingerprint_list, model):
+def add_vec(fingerprint_list, model):
     """
     Generate compound vectors by combining fingerprints with doc2vec model
     """
-    compound_vectors = []
-    for fingerprint in fingerprint_list:
-        compound_vectors.append(model.infer_vector(fingerprint))
-    return compound_vectors
+    compound_vec = []
+  for i in fingerprint_df:
+    fingerprint_vec = 0
+    for j in i:
+      fingerprint_vec += model.dv.vectors[j]
+    compound_vec.append(fingerprint_vec)
+  return compound_vec
 
 def evaluate_category(category, X_vec, y, lightgbm_model):
     """
