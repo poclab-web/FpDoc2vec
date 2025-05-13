@@ -5,7 +5,7 @@ from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 import lightgbm as lgb
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import f1_score
-from FpDoc2vec.py import evaluate_category, build_doc2vec_model, create_lightgbm_classifier
+from FpDoc2vec.py import evaluate_category, create_lightgbm_classifier
 
 def main():
     # Load dataset
