@@ -54,11 +54,14 @@ def main():
         'flavouring_agent', 'agrochemical', 'volatile_oil', 'antibacterial_agent', 'insecticide'
     ]
     
-    # loading Doc2Vec model
-    model = Doc2Vec.load("../../model/fpdoc2vec4096.model")
+    # Prepare corpus for Doc2Vec
+    corpus = [sum(doc, []) for doc in df["description_remove_stop_words"]]
+    
+    # Build Doc2Vec model
+    model = build_doc2vec_model(corpus, ngram_list)
     
     # Generate compound vectors
-    compound_vec = add_vec(finger_list, model)
+    compound_vec = add_vec(ngram_list, model)
     X_vec = np.array([compound_vec[i] for i in range(len(df))])
     
     # Create classifier
@@ -69,6 +72,7 @@ def main():
     for category in categories:
         y = np.array([1 if i == category else 0 for i in df[category]])
         results[category] = evaluate_category(category, X_vec, y, lightgbm_model)
+    
     
 if __name__ == "__main__":
     main()
