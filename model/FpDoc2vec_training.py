@@ -59,7 +59,7 @@ def main():
     model = train_fingerprint_doc2vec_model(df, finger_list)
     
     # Save the model
-    model.save("model/fpdoc2vec4096.model")
+    model.save("fpdoc2vec4096.model")
 
 if __name__ == "__main__":
     main()
