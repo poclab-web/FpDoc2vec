@@ -166,5 +166,5 @@ if __name__ == "__main__":
   pipeline.fit(fingerprint, y) 
   explainer = shap.Explainer(lambda x: pipeline.predict_proba(x)[:, 1], masker=masker)
   value = explainer(a, max_evals=500000)
-  with open('antioxidant_xor500000.pkl', 'wb') as f:
+  with open('shap_value/antioxidant_xor500000.pkl', 'wb') as f:
     pickle.dump(value, f)
