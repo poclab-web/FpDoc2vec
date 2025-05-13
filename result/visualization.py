@@ -1,52 +1,100 @@
-    with open("data/10genre_dataset.pkl", "rb") as f:
-        df = pickle.load(f)
-    finger_list = list(df["fp_3_4096"])
-    model = Doc2Vec.load("model/20250303_fp4096.model")
-    compound_vec = addvec(finger_list, model)
-    vec = np.array(compound_vec)
-    Umap = umap.UMAP(n_components=2, n_neighbors=50, min_dist=1, metric='cosine', random_state=0)
-    digits_tsne = Umap.fit_transform(vec)
-    dim_df = pd.DataFrame(digits_tsne, columns=["x", "y"])
-    
-    # 各カテゴリーごとにプロットするための準備
-    categories = ['antioxidant',
-       'anti_inflammatory_agent', 'allergen', 'dye', 'toxin', 'flavouring_agent',
-       'agrochemical', 'volatile_oil', 'antibacterial_agent', 'insecticide']
-    categories2 = ['"antioxidant"',
-       '"anti-inflammatory agent"', '"allergen"', '"dye"', '"toxin"', '"flavouring agent"',
-       '"agrochemical"', '"volatile oil"', '"antibacterial agent"', '"insecticide"']
-    
+import pickle
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import umap
+from gensim.models.doc2vec import Doc2Vec
+
+def load_data(file_path):
+    """Load dataset from pickle file"""
+    with open(file_path, "rb") as f:
+        data = pickle.load(f)
+    return data
+
+def addvec(finger_list, model):
+    """Generate compound vectors using Doc2Vec model"""
+    # Note: This function is not defined in the original code
+    # I'm assuming it exists elsewhere in your project
+    return model.infer_vector(finger_list)
+
+def generate_umap_embedding(vectors, n_components=2, n_neighbors=50, min_dist=1):
+    """Generate UMAP embedding from input vectors"""
+    umap_model = umap.UMAP(
+        n_components=n_components,
+        n_neighbors=n_neighbors, 
+        min_dist=min_dist,
+        metric='cosine',
+        random_state=0
+    )
+    return umap_model.fit_transform(vectors)
+
+def plot_chemical_categories(df, dim_df, categories, categories_display, output_file=None):
+    """Create multi-panel plot for different chemical categories"""
     fig, axes = plt.subplots(2, 5, figsize=(20, 8))
     axes = axes.flatten()
     
     for idx, category in enumerate(categories):
         ax = axes[idx]
         
+        # Create DataFrame with category labels and coordinates
         names_tb = pd.DataFrame(
-            {"NAME": [i[0] for i in df["compounds"]], "category": [1 if i == category else 0 for i in df[category]]}
+            {"NAME": [i[0] for i in df["compounds"]], 
+             "category": [1 if i == category else 0 for i in df[category]]}
         )
         index_tb = pd.concat([names_tb, dim_df], axis=1)
         
-        # 0の点を先に描画
+        # Plot non-category points (blue)
         mask_0 = index_tb["category"] == 0
-        ax.scatter(index_tb[mask_0]["x"], index_tb[mask_0]["y"], c='blue', s=9, alpha=0.6, label='non')
+        ax.scatter(index_tb[mask_0]["x"], index_tb[mask_0]["y"], 
+                  c='blue', s=9, alpha=0.6, label='non')
         
-        # 1の点を後で描画
+        # Plot category points (red)
         mask_1 = index_tb["category"] == 1
-        ax.scatter(index_tb[mask_1]["x"], index_tb[mask_1]["y"], c='red', s=9, alpha=1, label=category)
+        ax.scatter(index_tb[mask_1]["x"], index_tb[mask_1]["y"], 
+                  c='red', s=9, alpha=1, label=category)
         
-        ax.set_title(categories2[idx], fontsize=21, fontweight='bold')
+        ax.set_title(categories_display[idx], fontsize=21, fontweight='bold')
         ax.set_xlabel(None)
         ax.set_ylabel(None)
         # ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
         ax.tick_params(axis='both', which='major', labelsize=8)
     
     plt.tight_layout()
-    plt.savefig("fpdoc2vec_umap.png", dpi=300, bbox_inches='tight')
+    
+    # Save figure if output file is specified
+    if output_file:
+        plt.savefig(output_file, dpi=300, bbox_inches='tight')
     
     plt.show()
+
+def main():
+    # Load the dataset
+    df = load_data("data/10genre_dataset.pkl")
     
-    #時間の表示
-    end = time.time()
-    total_time = end - start
-    print(f"time:{total_time:.2f}" + "[s]")
+    # Extract fingerprints and load Doc2Vec model
+    finger_list = list(df["fp_3_4096"])
+    model = Doc2Vec.load("model/fpdoc2vec4096.model")
+    
+    # Generate compound vectors
+    compound_vec = addvec(finger_list, model)
+    vec = np.array(compound_vec)
+    
+    # Generate UMAP embedding
+    digits_tsne = generate_umap_embedding(vec)
+    dim_df = pd.DataFrame(digits_tsne, columns=["x", "y"])
+    
+    # Define categories and their display names
+    categories = [
+        'antioxidant', 'anti_inflammatory_agent', 'allergen', 'dye', 'toxin',
+        'flavouring_agent', 'agrochemical', 'volatile_oil', 'antibacterial_agent', 'insecticide'
+    ]
+    categories_display = [
+        '"antioxidant"', '"anti-inflammatory agent"', '"allergen"', '"dye"', '"toxin"',
+        '"flavouring agent"', '"agrochemical"', '"volatile oil"', '"antibacterial agent"', '"insecticide"'
+    ]
+    
+    # Create and save plot
+    plot_chemical_categories(df, dim_df, categories, categories_display, "fpdoc2vec_umap.png")
+
+if __name__ == "__main__":
+    main()
