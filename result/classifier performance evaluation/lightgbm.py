@@ -3,22 +3,7 @@ import numpy as np
 import lightgbm as lgb
 from gensim.models.doc2vec import Doc2Vec
 from sklearn.metrics import f1_score
-
-def addvec(fingerprint_list, model):
-    """
-    Convert fingerprints to vector representation using Doc2Vec model
-    
-    Args:
-        fingerprint_list: List of molecular fingerprints
-        model: Trained Doc2Vec model
-        
-    Returns:
-        List of compound vectors
-    """
-    compound_vectors = []
-    for fp in fingerprint_list:
-        compound_vectors.append(model.infer_vector(fp))
-    return compound_vectors
+from logistic_regression.py import addvec
 
 def evaluate_category_lightgbm(category, X_train, X_test, train_df, test_df):
     """
