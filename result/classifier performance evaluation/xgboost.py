@@ -3,6 +3,7 @@ import numpy as np
 from gensim.models.doc2vec import Doc2Vec
 from xgboost import XGBClassifier as xgb
 from sklearn.metrics import f1_score
+from logistic_regression.py import addvec
 
 def evaluate_category_xgboost(category, X_train, X_test, train_df, test_df):
     """
