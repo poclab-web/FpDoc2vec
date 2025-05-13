@@ -49,31 +49,6 @@ def evaluate_category(category, X_vec, y, lightgbm_model):
         'mean_test': np.mean(test_scores)
     }
 
-def build_doc2vec_model(corpus, fingerprint_list):
-    """
-    Build and train a Doc2Vec model from corpus and fingerprints
-    """
-    tagged_documents = [
-        TaggedDocument(words=corpus, tags=fingerprint_list[i]) 
-        for i, corpus in enumerate(corpus)
-    ]
-    
-    model = Doc2Vec(
-        tagged_documents, 
-        vector_size=100, 
-        min_count=0,
-        window=10,
-        min_alpha=0.023491749982816976,
-        sample=7.343338709169564e-06,
-        epochs=859,
-        negative=2,
-        ns_exponent=0.8998927133390002,
-        workers=1, 
-        seed=100
-    )
-    
-    return model
-
 def create_lightgbm_classifier():
     """
     Create and configure LightGBM classifier with optimized parameters
