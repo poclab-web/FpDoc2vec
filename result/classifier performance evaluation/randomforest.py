@@ -3,6 +3,7 @@ import numpy as np
 from gensim.models.doc2vec import Doc2Vec
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import f1_score
+from logistic_regression.py import addvec
 
 def evaluate_category_with_rf(category, X_train, X_test, train_df, test_df):
     """
