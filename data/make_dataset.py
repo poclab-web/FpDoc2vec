@@ -83,6 +83,10 @@ def main():
     
     df = df[df[target_columns].ne("No").any(axis=1)].reset_index(drop=True)
     
+    # Generate fingerprints
+    df["fp_3_4096"] = generate_morgan_fingerprints(df)
+    finger_list = list(df["fp_3_4096"])
+    
     # Save processed dataset
     with open("10genre_dataset.pkl", "wb") as f:
         pickle.dump(df, f)  
