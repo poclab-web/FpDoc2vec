@@ -69,6 +69,8 @@ def main():
     
     # Train and save the Doc2Vec model
     model = train_doc2vec_model(df)
+    # Save the model
+    model.save("namedoc2vec.model")
 
 if __name__ == "__main__":
     main()
