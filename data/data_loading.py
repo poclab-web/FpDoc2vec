@@ -85,7 +85,7 @@ def main(sdf_file: str, file_name: str) -> None:
     """Process SDF file to extract compound information and fetch descriptions from PubChem
     
     Args:
-        sdf_file: Path to the SDF file containing chemical compound data
+        sdf_file: Path to SDF file containing compound data obtained from ChEBI
         file_name: Path where the output pickle file will be saved
         
     Returns:
