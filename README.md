@@ -5,13 +5,13 @@ Research code for the FpDoc2vec model that predicts chemical roles from database
 - This model has 
 
 # Installation
-if you instantly use this model, run the below code.
-
 this repository requires these packages:
 <package list>
 
 And this repository is installed by this code
-<install code>
+```
+pip install requirements.txt
+```
 
 # Usage
 This model has two steps to prediction.
