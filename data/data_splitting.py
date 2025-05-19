@@ -42,7 +42,7 @@ def split_and_save_dataset(input_filename: str, testfile_name: str, trainfile_na
 
 if __name__ == "__main__":
     # Example usage - replace with your actual file paths
-    input_filename = "input_filename.pkl"
-    testfile_name = "testfile_name.pkl"
-    trainfile_name = "trainingfile_name.pkl"
+    input_filename = "10genre_dataset.pkl"
+    testfile_name = "test_df.pkl"
+    trainfile_name = "train_df.pkl"
     split_and_save_dataset(input_filename, testfile_name, trainfile_name)
