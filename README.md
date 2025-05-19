@@ -8,7 +8,7 @@ Research code for the FpDoc2vec model that predicts chemical roles from database
 this repository requires these packages:
 <package list>
 
-And this repository is installed by this code
+And this repository is installed by this prompt code
 ```
 pip install requirements.txt
 ```
@@ -20,22 +20,61 @@ This model has two steps to prediction.
 first, you should prepare the language dataset, like this format;
 <todo Table write>
 
-Next, you train FpDoc2Vec model and save it. the below is example code.
-<todo write code>
+Next, you train FpDoc2Vec model and save it. the below is example python code.
+```
+import ~~
+
+with open("your dataset.pkl", "rb") as f:
+  contents = pickle.load(f)
+with open("your conditions.pkl", "rb") as f:
+  conditions = pickle.load(f)
+
+model = "make model function"(contents, conditions=conditions)
+
+model.save("your model name.d2v")
+```
 
 2. Train Activity Dataset
 You should prepare the objective activity dataset, which is pairs of the mol onto the activity.
 Next, you train FpDoc2Vec-derivate model, which model is exchanging fingerprints to embeddings of FpDoc2Vec and learning embeddings as input and activities as outputs.
 Example code is shown below;
-<todo write code>
+```
+import ~~
+
+fpdoc2vec = model.load("your model name.d2v")
+with open("your activities.pkl", "rb") as f:
+  dataset = pickle.load(f)
+with open("your conditions.pkl", "rb") as f:
+  conditions = pickle.load(f)
+
+model = "predict activity function"(dataset, fpdoc2vec, conditions=conditions)
+model.save("your model name.prd")
+"plot function"(model)
+```
 
 And if you want feature analysis, you can run the SHAP analysis code in result/SHAP directory.
 Example code is shown below;
-<todo write code>
+```
+import ~~
+
+prd_model = model.load("your prediction model name.prd")
+fpdoc2vec = model.load("your model name.d2v")
+with open("your activity dataset.pkl", "rb") as f:
+  dataset = pickle.load(f)
+with open("your conditions.pkl", "rb") as f:
+  conditions = pickle.load(f)
+
+shaps = "make SHAP function"(dataset, prd_model, fpdoc2model, conditions=conditions)
+"plot function"(shap)
+```
 
 We supported calcuration of fingerprints importances. So if you want to look graphical interpretations, you should write mapping codes.
 Our repository has only one example of mapping, which is atom- and bond-based importance mapping.
-<todo example code and figures>
+```
+import ~~
+
+"plot function"(shap, dataset)
+```
 
 # Performance
 Please look up performances from the paper ['Predicting Chemical Roles from Database Descriptions Using Natural Language Processing'](URL here)
