@@ -141,4 +141,7 @@ def main(sdf_file: str, file_name: str) -> None:
 
 
 if __name__ == "__main__":
+    # Example usage - replace with your actual file paths
+    sdf_file = "chebi_file.sdf"
+    file_name = "output_description.pkl"
     main(sdf_file="path/to/your/file.sdf", file_name="output_descriptions.pkl")
