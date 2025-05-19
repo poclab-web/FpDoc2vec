@@ -1,49 +1,165 @@
 import pickle
 import re
+import numpy as np
 import pandas as pd
+from typing import Dict, List, Tuple, Union, Any, Optional
+from tqdm import tqdm
 from gensim.parsing.preprocessing import remove_stopword_tokens
+from gensim.models.phrases import Phrases
 
-def lowercasing(x):
-    """Convert input to lowercase, handling different data types"""
-    if type(x) == list or type(x) == tuple:
+
+def lowercasing(x: Any) -> Any:
+    """Convert input to lowercase, handling different data types
+    
+    Args:
+        x: Input data which can be a string, list, tuple, or other convertible type
+        
+    Returns:
+        The lowercase version of the input with the same structure
+        
+    Raises:
+        Exception: If the input cannot be converted to lowercase
+    """
+    if isinstance(x, (list, tuple)):
         x = [lowercasing(_) for _ in x]
-    elif type(x) == str:
+    elif isinstance(x, str):
         x = x.lower()
     else:
         try:
             x = str(x).lower()
         except Exception as e:
-            raise e("Bugs")
+            raise Exception("Bugs") from e
     return x
 
-def split_sentence(x):
-    """Split text into sentences"""
+
+def split_sentence(x: str) -> List[str]:
+    """Split text into sentences
+    
+    Args:
+        x: Input text string
+        
+    Returns:
+        List of sentences extracted from the input text
+    """
     if ". " in x:
         new_x = x.split(". ")
     else:
         new_x = [x]
     last_word = new_x[-1]
-    if re.match(r".*\.", last_word) != None:
+    if re.match(r".*\.", last_word) is not None:
         new_x[-1] = last_word.rstrip(".")
     return new_x
 
-def split_word(x):
-    """Split sentences into words"""
+
+def split_word(x: List[str]) -> List[List[str]]:
+    """Split sentences into words
+    
+    Args:
+        x: List of sentences
+        
+    Returns:
+        List of lists, where each inner list contains the words from a sentence
+    """
     new_x = []
     for _1 in x:
         new_x.append([_2 for _2 in _1.split() if _2 != ""])
     return new_x
 
-def cleanups(x):
-    """Remove stopwords from each sentence"""
+
+def cleanups(x: List[List[str]]) -> List[List[str]]:
+    """Remove stopwords from each sentence
+    
+    Args:
+        x: List of sentences, where each sentence is a list of words
+        
+    Returns:
+        List of sentences with stopwords removed
+    """
     new_x = []
     for sentence in x:
         new_sentence = remove_stopword_tokens(sentence)
         new_x.append(new_sentence)
     return new_x
 
-def preprocess_chemical_descriptions(input_file, output_filename):
-    """Load and preprocess chemical compound descriptions"""
+
+def phrasing(x: List[List[str]], phrase_list: List[str], connector: str = "_") -> List[List[str]]:
+    """Replace phrases in sentences with connected versions
+    
+    Args:
+        x: List of sentences, where each sentence is a list of words
+        phrase_list: List of phrases to look for in the sentences
+        connector: String to use for connecting words in a phrase
+        
+    Returns:
+        List of sentences with phrases connected using the connector
+    """
+    phrase_temp = lowercasing(phrase_list)
+    phrase_temp = tuple([tuple(phrase.split()) for phrase in phrase_temp])
+
+    new_x = []
+    for sentence in x:
+        check_list = []
+        append_list = []
+        for j in range(len(sentence) + 2):
+            for phrase in phrase_temp:
+                if j + len(phrase) > len(sentence):
+                    continue
+                try:
+                    bool_list = [bool(re.search('^' + re.escape(phrase_word), word)) or bool(re.search(re.escape(phrase_word) + '$', word)) 
+                                 for phrase_word, word in zip(list(phrase), sentence[j:j + len(phrase)])]
+                    if np.prod(bool_list) != 0:
+                        if j not in append_list and j + len(phrase) not in append_list:
+                            check_list.append((j, j + len(phrase), connector.join(sentence[j:j + len(phrase)])))
+                            append_list += list(range(j, j + len(phrase)))
+                except:
+                    print(phrase)
+                    print(sentence)
+
+        new_sentence = []
+        new_sentence += sentence
+
+        check_list = list(set(check_list))
+        check_list = sorted(check_list, key=lambda x: x[0])
+
+        for i, j, phrase in reversed(check_list):
+            new_sentence.insert(i, phrase)
+            for _ in range(j, i, -1):
+                try:
+                    del new_sentence[_]
+                except Exception as e:
+                    print(sentence)
+                    print(new_sentence)
+                    raise e
+        new_x.append(new_sentence)
+
+    return new_x
+
+
+def phrase(x: List[List[str]]) -> List[List[str]]:
+    """Generate phrases using gensim's Phrases model
+    
+    Args:
+        x: List of sentences, where each sentence is a list of words
+        
+    Returns:
+        List of sentences with automatically detected phrases
+    """
+    a = Phrases(x, min_count=1, threshold=1.0)
+    c = Phrases(a[x], min_count=1, threshold=1.0)
+    d = list(c[a[x]])
+    return d
+
+
+def preprocess_chemical_descriptions(input_file: str, output_filename: str) -> pd.DataFrame:
+    """Load and preprocess chemical compound descriptions
+    
+    Args:
+        input_file: Path to the pickle file containing compound descriptions
+        output_filename: Path where the processed data will be saved
+        
+    Returns:
+        DataFrame containing the processed chemical descriptions
+    """
     # Load the data
     with open(input_file, "rb") as f:
         dict_data = pickle.load(f)
@@ -55,15 +171,14 @@ def preprocess_chemical_descriptions(input_file, output_filename):
     all_text_df["description_split"] = all_text_df["description_split_sentence"].map(lambda x: split_word(x))
     all_text_df["description_remove_stop_words"] = all_text_df["description_split"].map(lambda x: cleanups(x))
     
-    # description_phrasesに phrasing + gensim
-    
+    # Apply phrasing with compound names
     li = []
     for i in tqdm(range(len(all_text_df))):
-        li.append(phrasing(all_text_df.iat[i,5], phrase_list=[all_text_df.iat[i,0][0]]))
+        li.append(phrasing(all_text_df.iat[i, 5], phrase_list=[all_text_df.iat[i, 0][0]]))
     all_text_df["description_phrases"] = li
     all_text_df["description_phrases"] = all_text_df["description_phrases"].map(lambda x: phrase(x))
 
-    #gensim
+    # Apply gensim phrase detection
     all_text_df["description_gensim"] = all_text_df["description_remove_stop_words"].map(lambda x: phrase(x))
     
     # Save the processed data
@@ -72,5 +187,9 @@ def preprocess_chemical_descriptions(input_file, output_filename):
     
     return all_text_df
 
+
 if __name__ == "__main__":
-    preprocess_chemical_descriptions(input_file, output_filename)
+    # Example usage - replace with your actual file paths
+    input_file = "compound_descriptions.pkl"
+    output_filename = "processed_descriptions.pkl"
+    preprocess_chemical_descriptions(input_file="compound_descriptions.pkl", output_filename)
