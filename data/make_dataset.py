@@ -2,23 +2,12 @@ import pickle
 import pandas as pd
 from rdkit import Chem
 from rdkit.Chem import PandasTools
-
-def mol2inchi(df):
-    """Convert RDKit molecule objects to InChIKeys"""
-    li = []
-    for i in df["ROMol"]:
-        try:
-            li.append(Chem.MolToInchiKey(i))
-        except:
-            li.append(None)
-    return li
-
-
+from data_loading import mol_to_inchikey
 
 def add_property_column(df, property_name, sdf_path):
     """Add a property column based on InChIKey matching with compounds from an SDF file"""
     property_df = PandasTools.LoadSDF(sdf_path)
-    property_df["inchikey"] = mol2inchi(property_df)
+    property_df["inchikey"] = mol_to_inchikey(property_df)
     df[property_name] = [property_name if i in list(property_df['inchikey']) else "No" for i in df["inchikey"]]
     return df
 
@@ -38,17 +27,23 @@ def generate_morgan_fingerprints(df):
     fingerprints = np.array(fingerprints)
     return [[j for j in range(4096) if i[j] == 1] for i in fingerprints]
 
-def main():
+def main(input_file, output_file):
     # Load previously processed data
-    with open("3starAll_text_ver2.pkl", "rb") as f:
+    with open(input_file, "rb") as f:
         df = pickle.load(f)
     
-    # Consistency check and duplicate handling
+    # Extract records with duplicate descriptions
     dup_df = df[df.duplicated(subset="description", keep=False)]
+    # Convert compound names to lowercase and replace spaces with underscores
     dup_df["NAME"] = [lowercasing(i[0]).replace(" ", "_") for i in a["compounds"]]
+    # Filter records where the first word of the description matches the compound name
     filtered_df = dup_df[dup_df.apply(lambda x: x['description_split'][0][0] == x['NAME'], axis=1)]
+    # Add manually verified records that weren't captured by the automatic filtering
+    # Note: Replace these indices with your actual indices after verification
     supple_df = dup_df.loc[[3829, 40666, 11662, 8371, 4430, 25339]]
+    # Combine automatically filtered and manually verified records
     comp_df = pd.concat([filtered_df, supple_df])
+    # Identify duplicate records to be removed (those not in the combined set)
     del_df = dup_df[~dup_df["inchikey"].isin(list(comp_df["inchikey"]))]
     
     # Normalization
@@ -90,8 +85,10 @@ def main():
     finger_list = list(df["fp_3_4096"])
     
     # Save processed dataset
-    with open("10genre_dataset.pkl", "wb") as f:
+    with open(output_file, "wb") as f:
         pickle.dump(df, f)  
 
 if __name__ == "__main__":
-    main()
+    input_file = ""
+    output_file = "10genre_dataset,pkl"
+    main(input_file, output_file)
