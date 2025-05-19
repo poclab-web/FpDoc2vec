@@ -134,18 +134,19 @@ def phrasing(x: List[List[str]], phrase_list: List[str], connector: str = "_") -
 
     return new_x
 
-
-def phrase(x: List[List[str]]) -> List[List[str]]:
+def phrase(x: List[List[str]], min_count: int, threshold: float) -> List[List[str]]:
     """Generate phrases using gensim's Phrases model
     
     Args:
         x: List of sentences, where each sentence is a list of words
+        min_count: Minimum count of word occurrences to be considered for phrasing
+        threshold: Score threshold for phrase formation; higher means fewer phrases
         
     Returns:
         List of sentences with automatically detected phrases
     """
-    a = Phrases(x, min_count=1, threshold=0.7)
-    c = Phrases(a[x], min_count=1, threshold=0.7)
+    a = Phrases(x, min_count=min_count, threshold=threshold)
+    c = Phrases(a[x], min_count=min_count, threshold=threshold)
     d = list(c[a[x]])
     return d
 
@@ -176,10 +177,10 @@ def preprocess_chemical_descriptions(input_file: str, output_filename: str) -> p
     for i in tqdm(range(len(all_text_df))):
         li.append(phrasing(all_text_df.iat[i, 5], phrase_list=[all_text_df.iat[i, 0][0]]))
     all_text_df["description_phrases"] = li
-    all_text_df["description_phrases"] = all_text_df["description_phrases"].map(lambda x: phrase(x))
+    all_text_df["description_phrases"] = all_text_df["description_phrases"].map(lambda x: phrase(x, 1, 0.7))
 
     # Apply gensim phrase detection
-    all_text_df["description_gensim"] = all_text_df["description_remove_stop_words"].map(lambda x: phrase(x))
+    all_text_df["description_gensim"] = all_text_df["description_remove_stop_words"].map(lambda x: phrase(x, 1, 0.7))
     
     # Save the processed data
     with open(output_filename, "wb") as f:
