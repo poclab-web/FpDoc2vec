@@ -1,12 +1,21 @@
 import pickle
 import pandas as pd
+from typing import List, Optional
 
-def split_and_save_dataset():
+def split_and_save_dataset(input_filename: str, testfile_name: str, trainfile_name: str) -> None:
     """
     Split the chemical compound dataset into training and test sets for novel molecule prediction evaluation.
+    
+    Args:
+        input_filename: Path to the pickle file for DataFrame for prediction
+        testfile_name: Path where the test dataset pickle file will be saved (10% of data)
+        trainfile_name: Path where the training dataset pickle file will be saved (90% of data)
+        
+    Returns:
+        None
     """
     # Load the original dataset
-    with open("chemdata/10genre_dataset.pkl", "rb") as f:
+    with open(input_filename, "rb") as f:
         df = pickle.load(f)
     
     # Define categories of interest
@@ -25,11 +34,15 @@ def split_and_save_dataset():
     df2 = df2.reset_index(drop=True)
     
     # Save test and training datasets
-    with open("test_df.pkl", 'wb') as f:
+    with open(testfile_name, 'wb') as f:
         pickle.dump(df1, f)
     
-    with open("train_df.pkl", 'wb') as f:
+    with open(trainfile_name, 'wb') as f:
         pickle.dump(df2, f)
 
 if __name__ == "__main__":
-    split_and_save_dataset()
+    # Example usage - replace with your actual file paths
+    input_filename = "input_filename.pkl"
+    testfile_name = "testfile_name.pkl"
+    trainfile_name = "trainingfile_name.pkl"
+    split_and_save_dataset(input_filename, testfile_name, trainfile_name)
