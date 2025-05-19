@@ -192,4 +192,4 @@ if __name__ == "__main__":
     # Example usage - replace with your actual file paths
     input_file = "compound_descriptions.pkl"
     output_filename = "processed_descriptions.pkl"
-    preprocess_chemical_descriptions(input_file="compound_descriptions.pkl", output_filename)
+    preprocess_chemical_descriptions(input_file, output_filename)
