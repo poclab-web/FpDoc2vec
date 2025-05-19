@@ -1,33 +1,66 @@
 import pickle
+import numpy as np
 import pandas as pd
+from typing import Dict, List, Union, Callable, Optional, Any, Tuple
 from rdkit import Chem
-from rdkit.Chem import PandasTools
-from data_loading import mol_to_inchikey
+from rdkit.Chem import PandasTools, AllChem
+from data_loading.py import mol_to_inchikey
+from preprocessing.py import lowercasing
 
-def add_property_column(df, property_name, sdf_path):
-    """Add a property column based on InChIKey matching with compounds from an SDF file"""
+
+def add_property_column(df: pd.DataFrame, property_name: str, sdf_path: str) -> pd.DataFrame:
+    """Add a property column based on InChIKey matching with compounds from an SDF file
+    
+    Args:
+        df: DataFrame containing compound information with an 'inchikey' column
+        property_name: Name of the property to add (will be used as column name)
+        sdf_path: Path to the SDF file containing compounds with the specified property
+        
+    Returns:
+        DataFrame with the new property column added
+    """
     property_df = PandasTools.LoadSDF(sdf_path)
     property_df["inchikey"] = mol_to_inchikey(property_df)
     df[property_name] = [property_name if i in list(property_df['inchikey']) else "No" for i in df["inchikey"]]
     return df
 
-def generate_morgan_fingerprints(df):
+
+def generate_morgan_fingerprints(df: pd.DataFrame, radius: int, n_bits: int) -> List[List[int]]:
     """
-    Generate Morgan fingerprints (ECFP6) with radius 3 and 4096 bits for molecules in the dataframe.
-    Returns a list of the bit positions that are set to 1 for each molecule.
+    Generate Morgan fingerprints (ECFP6) for molecules in the dataframe.
+    
+    Args:
+        df: DataFrame containing RDKit molecule objects in a column named 'ROMol'
+        radius: The radius of the Morgan fingerprint. Higher values capture more extended 
+                connectivity information around each atom
+        n_bits: The length of the bit vector. Larger values reduce the chance of bit collisions
+    
+    Returns:
+        A list containing the indices of bits set to 1 for each molecule's fingerprint.
+        Each inner list represents the active bits for a single molecule.
     """
     fingerprints = []
     for i, mol in enumerate(df["ROMol"]):
         try:
-            fingerprint = [j for j in AllChem.GetMorganFingerprintAsBitVect(mol, 3, 4096)]
+            fingerprint = [j for j in AllChem.GetMorganFingerprintAsBitVect(mol, radius, n_bits)]
             fingerprints.append(fingerprint)
         except:
-            print("Error", i)
+            print(f"Error processing molecule at index {i}")
             continue
     fingerprints = np.array(fingerprints)
-    return [[j for j in range(4096) if i[j] == 1] for i in fingerprints]
+    return [[j for j in range(n_bits) if i[j] == 1] for i in fingerprints]
 
-def main(input_file, output_file):
+def main(input_file: str, properties: Dict[str, str], output_file: str) -> None:
+    """Process chemical data, add property columns, and generate fingerprints
+    
+    Args:
+        input_file: Path to the input pickle file containing preprocessed chemical data
+        properties: Dictionary mapping property names to SDF file paths
+        output_file: Path where the output pickle file will be saved
+        
+    Returns:
+        None
+    """
     # Load previously processed data
     with open(input_file, "rb") as f:
         df = pickle.load(f)
@@ -55,20 +88,6 @@ def main(input_file, output_file):
     PandasTools.AddMoleculeColumnToFrame(df, "smiles")
     df.insert(1, "inchikey", [i[2] for i in df["compounds"]])
     
-    # Add property columns for multiple chemical roles
-    properties = {
-        "antioxidant": "chemdata/ChEBI_antioxidant.sdf",
-        "anti_inflammatory": "chemdata/ChEBI_anti_inflammatory_agent.sdf",
-        "allergen": "chemdata/ChEBI_allergen.sdf",
-        "dye": "chemdata/ChEBI_dye.sdf",
-        "toxin": "chemdata/ChEBI_toxin.sdf",
-        "flavouring_agent": "chemdata/ChEBI_flavouring_agent.sdf",
-        "agrochemical": "chemdata/ChEBI_agrochemical.sdf",
-        "volatile_oil": "chemdata/ChEBI_volatile_oil_component.sdf",
-        "antibacterial_agent": "chemdata/ChEBI_antibacterial_agent.sdf",
-        "insecticide": "chemdata/ChEBI_insecticide.sdf"
-    }
-    
     for property_name, sdf_path in properties.items():
         df = add_property_column(df, property_name, sdf_path)
     
@@ -81,14 +100,29 @@ def main(input_file, output_file):
     df = df[df[target_columns].ne("No").any(axis=1)].reset_index(drop=True)
     
     # Generate fingerprints
-    df["fp_3_4096"] = generate_morgan_fingerprints(df)
+    df["fp_3_4096"] = generate_morgan_fingerprints(df, 3, 4096)
     finger_list = list(df["fp_3_4096"])
     
     # Save processed dataset
     with open(output_file, "wb") as f:
-        pickle.dump(df, f)  
+        pickle.dump(df, f)
+
 
 if __name__ == "__main__":
+    # Add property columns for multiple chemical roles
+    # Note: Replace these file name with your actual name after verification
+    properties = {
+        "antioxidant": "chemdata/ChEBI_antioxidant.sdf",
+        "anti_inflammatory": "chemdata/ChEBI_anti_inflammatory_agent.sdf",
+        "allergen": "chemdata/ChEBI_allergen.sdf",
+        "dye": "chemdata/ChEBI_dye.sdf",
+        "toxin": "chemdata/ChEBI_toxin.sdf",
+        "flavouring_agent": "chemdata/ChEBI_flavouring_agent.sdf",
+        "agrochemical": "chemdata/ChEBI_agrochemical.sdf",
+        "volatile_oil": "chemdata/ChEBI_volatile_oil_component.sdf",
+        "antibacterial_agent": "chemdata/ChEBI_antibacterial_agent.sdf",
+        "insecticide": "chemdata/ChEBI_insecticide.sdf"
+    }
     input_file = "processed_descriptions.pkl"
-    output_file = "10genre_dataset,pkl"
-    main(input_file, output_file)
+    output_file = "10genre_dataset.pkl"  
+    main(input_file, properties, output_file)
