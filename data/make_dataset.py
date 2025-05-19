@@ -13,6 +13,8 @@ def mol2inchi(df):
             li.append(None)
     return li
 
+
+
 def add_property_column(df, property_name, sdf_path):
     """Add a property column based on InChIKey matching with compounds from an SDF file"""
     property_df = PandasTools.LoadSDF(sdf_path)
