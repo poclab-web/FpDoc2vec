@@ -5,7 +5,7 @@ from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 
 def generate_morgan_fingerprints(df: pd.DataFrame, radius: int, n_bits: int) -> List[List[int]]:
     """
-    Generate Morgan fingerprints (ECFP6) for molecules in the dataframe.
+    Generate Morgan fingerprints for molecules in the dataframe.
     
     Args:
         df: DataFrame containing RDKit molecule objects in a column named 'ROMol'
