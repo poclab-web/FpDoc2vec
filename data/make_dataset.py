@@ -89,6 +89,6 @@ def main(input_file, output_file):
         pickle.dump(df, f)  
 
 if __name__ == "__main__":
-    input_file = ""
+    input_file = "processed_descriptions.pkl"
     output_file = "10genre_dataset,pkl"
     main(input_file, output_file)
