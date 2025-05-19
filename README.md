@@ -66,12 +66,20 @@ with open("your conditions.pkl", "rb") as f:
 
 shaps = "make SHAP function"(dataset, prd_model, fpdoc2model, conditions=conditions)
 "plot function"(shap)
+
+with open("your shap file.pkl", "wb") as f:
+  pickle.dump(shap, f)
 ```
 
 We supported calcuration of fingerprints importances. So if you want to look graphical interpretations, you should write mapping codes.
 Our repository has only one example of mapping, which is atom- and bond-based importance mapping.
 ```
 import ~~
+
+with open("your shap file.pkl", "rb") as f:
+  shap = pickle.load(f)
+with open("your activity dataset, "rb") as f:
+  dataset = pickle.load(f)
 
 "plot function"(shap, dataset)
 ```
