@@ -23,8 +23,14 @@ first, you should prepare the language dataset, like this format;
 Next, you train FpDoc2Vec model and save it. the below is example code.
 <todo write code>
 
-3. Train Activity Dataset
+2. Train Activity Dataset
 You should prepare the objective activity dataset, which is pairs of the mol onto the activity.
 And, you train FpDoc2Vec-derivate model, which model is exchanging fingerprints to embeddings of FpDoc2Vec and learning embeddings as input and activities as outputs.
 Example code is shown below;
 <todo write code>
+
+# Performance
+Please look up performances from the paper 'Predicting Chemical Roles from Database Descriptions Using Natural Language Processing'
+
+# Contact
+Please email to gotoh-hiroaki-yw@ynu.ac.jp if you have any questions or comments.
