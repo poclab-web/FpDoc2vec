@@ -144,8 +144,8 @@ def phrase(x: List[List[str]]) -> List[List[str]]:
     Returns:
         List of sentences with automatically detected phrases
     """
-    a = Phrases(x, min_count=1, threshold=1.0)
-    c = Phrases(a[x], min_count=1, threshold=1.0)
+    a = Phrases(x, min_count=1, threshold=0.7)
+    c = Phrases(a[x], min_count=1, threshold=0.7)
     d = list(c[a[x]])
     return d
 
