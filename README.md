@@ -2,7 +2,7 @@
 Research code for the FpDoc2vec model that predicts chemical roles from database descriptions using NLP. Code used in the paper ['Predicting Chemical Roles from Database Descriptions Using Natural Language Processing'](URL here)
 
 # Summary
-- This model has 
+- [Under construction]
 
 # Installation
 this repository requires these packages:
