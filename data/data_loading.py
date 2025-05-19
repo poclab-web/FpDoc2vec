@@ -54,16 +54,16 @@ def mol_to_inchikey(mol_list):
             inchikeys.append(0)
     return inchikeys
 
-def main():
+def main(input_sdf_file, output_file_name):
     # Load chemical data
-    df = PandasTools.LoadSDF("chemdata/ChEBI_complete_3star_20240601.sdf")
+    df = PandasTools.LoadSDF(sdf_file)
     data_df = df[["ChEBI Name", "ROMol"]].rename(columns={"ChEBI Name":"NAME"})
     
     # Generate InChIKeys
     data_df["inchikey"] = mol_to_inchikey(data_df["ROMol"])
     
     # Remove entries with invalid InChIKey
-    data_df = data_df[data_df["inchikey"] != data_df.iat[2,2]]
+    data_df = data_df.dropna(subset=['inchikey'])
     
     # Remove zwitterion entries
     data_df = data_df[~data_df['NAME'].str.contains('zwitterion')]
@@ -100,8 +100,8 @@ def main():
     all1.update(all2)
     
     # Save data
-    with open("3starAll_ver2.pkl", "wb") as f:
+    with open(file_name, "wb") as f:
         pickle.dump(all1, f)
 
 if __name__ == "__main__":
-    main()
+    main(input_sdf_file, output_file_name)
