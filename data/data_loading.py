@@ -81,11 +81,13 @@ def mol_to_inchikey(mol_list: List) -> List[Union[str, int]]:
     return inchikeys
 
 
-def main(sdf_file: str, file_name: str) -> None:
+def main(sdf_file: str, name_line: str, mol_file_line: str, file_name: str) -> None:
     """Process SDF file to extract compound information and fetch descriptions from PubChem
     
     Args:
         sdf_file: Path to SDF file containing compound data obtained from ChEBI
+        name_line: A column name in a dataframe that stores compound names
+        mol_file_line: A column name in a dataframe that stores molfile
         file_name: Path where the output pickle file will be saved
         
     Returns:
@@ -93,7 +95,7 @@ def main(sdf_file: str, file_name: str) -> None:
     """
     # Load chemical data
     df = PandasTools.LoadSDF(sdf_file)
-    data_df = df[["ChEBI Name", "ROMol"]].rename(columns={"ChEBI Name":"NAME"})
+    data_df = pd.DataFrame({"NAME": list(df[name_line]), "ROMol": list(df[mol_file_line])})
     
     # Generate InChIKeys
     data_df["inchikey"] = mol_to_inchikey(data_df["ROMol"])
@@ -144,4 +146,4 @@ if __name__ == "__main__":
     # Example usage - replace with your actual file paths
     sdf_file = "chebi_file.sdf"
     file_name = "output_description.pkl"
-    main(sdf_file, file_name)
+    main(sdf_file, name_line = "ChEBI Name", mol_file_line = "ROMol", file_name) 
