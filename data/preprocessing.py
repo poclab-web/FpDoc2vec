@@ -42,10 +42,10 @@ def cleanups(x):
         new_x.append(new_sentence)
     return new_x
 
-def preprocess_chemical_descriptions():
+def preprocess_chemical_descriptions(input_file, output_filename):
     """Load and preprocess chemical compound descriptions"""
     # Load the data
-    with open("3starAll_ver2.pkl", "rb") as f:
+    with open(input_file, "rb") as f:
         dict_data = pickle.load(f)
         all_text_df = pd.DataFrame(dict_data.items(), columns=["compounds", "description"])
     
@@ -55,11 +55,22 @@ def preprocess_chemical_descriptions():
     all_text_df["description_split"] = all_text_df["description_split_sentence"].map(lambda x: split_word(x))
     all_text_df["description_remove_stop_words"] = all_text_df["description_split"].map(lambda x: cleanups(x))
     
+    # description_phrasesに phrasing + gensim
+    
+    li = []
+    for i in tqdm(range(len(all_text_df))):
+        li.append(phrasing(all_text_df.iat[i,5], phrase_list=[all_text_df.iat[i,0][0]]))
+    all_text_df["description_phrases"] = li
+    all_text_df["description_phrases"] = all_text_df["description_phrases"].map(lambda x: phrase(x))
+
+    #gensim
+    all_text_df["description_gensim"] = all_text_df["description_remove_stop_words"].map(lambda x: phrase(x))
+    
     # Save the processed data
-    with open("chemdata/3starAll_text_ver2.pkl", "wb") as f:
+    with open(output_filename, "wb") as f:
         pickle.dump(all_text_df, f)
     
     return all_text_df
 
 if __name__ == "__main__":
-    preprocess_chemical_descriptions()
+    preprocess_chemical_descriptions(input_file, output_filename)
