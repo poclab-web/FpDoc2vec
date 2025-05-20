@@ -7,7 +7,6 @@ from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 import lightgbm as lgb
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import f1_score
-from ECFP2048bit.py import add_vec, build_doc2vec_model, create_lightgbm_classifier
 
 
 def generate_maccs_fingerprints(df: pd.DataFrame) -> Tuple[List[Optional[List[int]]], List[int]]:
