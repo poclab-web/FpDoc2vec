@@ -188,7 +188,7 @@ def shap_visualize(shap_values: shap.Explanation,
             kwargs = plot_kwg['violin'] or {}
             shap.plots.violin(shap_values, show=show_option, **kwargs)
 
-def main(input_path: str, purpose: str, model_path: str, max_evals: int = 500000, output_path: str = "shap_values.pkl") -> None:
+def main(input_path: str, purpose: str, model_path: str, params: Dict[str, Any], max_evals: int, output_path: str) -> None:
     """
     Main function to run the SHAP analysis pipeline
     
@@ -196,6 +196,7 @@ def main(input_path: str, purpose: str, model_path: str, max_evals: int = 500000
         input_path: Path to the pickled DataFrame with molecule data
         purpose: Target biological role to analyze
         model_path: Path to the Doc2Vec model
+        params: Dictionary of parameters for LightGBM classifier configuration
         max_evals: Maximum evaluations for SHAP analysis
         output_path: Path to save the SHAP values output
         
@@ -210,7 +211,7 @@ def main(input_path: str, purpose: str, model_path: str, max_evals: int = 500000
     model = Doc2Vec.load(model_path)
     
     # Create classifier
-    lightgbm = create_lightgbm_classifier()
+    lightgbm = create_lightgbm_classifier(params)
     pipeline, masker = shap_variables(model.dv.vectors, lightgbm)
     
     # Generate target variable
@@ -239,4 +240,23 @@ if __name__ == "__main__":
     model_path = "fpdoc2vec.model"
     purpose = "antioxidant"
     output_path = "shap_values.pkl"
-    main(input_path, purpose, model_path, output_path=output_path)
+    # Example params - replace with your actual params
+    gbm_params: Dict[str, Any] = {
+        "boosting_type": "dart", 
+        "n_estimators": 444, 
+        "learning_rate": 0.07284380689492893, 
+        "max_depth": 6, 
+        "num_leaves": 41, 
+        "min_child_samples": 21, 
+        "class_weight": "balanced", 
+        "reg_alpha": 1.4922729949843299, 
+        "reg_lambda": 2.8809246344115778, 
+        "colsample_bytree": 0.5789063337359206, 
+        "subsample": 0.5230422589468584, 
+        "subsample_freq": 2, 
+        "drop_rate": 0.1675163179873052, 
+        "skip_drop": 0.49103811434109507, 
+        "objective": 'binary', 
+        "random_state": 50
+    }
+    main(input_path, purpose, model_path, gbm_params, max_evals = 500000, output_path)
