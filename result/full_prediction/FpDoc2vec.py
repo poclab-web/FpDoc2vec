@@ -55,6 +55,23 @@ def evaluate_category(category, X_vec, y, lightgbm_model):
     }
 
 
+def make_fp2vector(model_path: str, df: pd.DataFrame) -> np.ndarray:
+    """Convert to compound vectors using FpDoc2Vec model
+    
+    Args:
+        model_path: Path to the saved FpDoc2Vec model file
+        df: DataFrame containing compound data with 'fp_3_4096' column
+        
+    Returns:
+        NumPy array of compound vectors with shape (len(compound_vec), vector_size)
+    """
+    model = Doc2Vec.load(model_path)
+    finger_list = list(df["fp_3_4096"])
+    compound_vec = add_vectors(finger_list, model)
+    vec = np.array(compound_vec)
+    return vec
+
+
 def main(input_file, model_path):
     # Load dataset
     with open(input_file, "rb") as f:
