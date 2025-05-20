@@ -1,6 +1,6 @@
-import pickle
 import numpy as np
-from typing import Dict, List, Union, Tuple, Optional, Any
+import pickle
+from typing import Dict, List, Tuple, Union, Optional, Any
 from rdkit import Chem
 from rdkit.Chem import AllChem, rdDepictor, rdMolDraw2D
 from IPython.display import display, SVG
@@ -8,10 +8,10 @@ from IPython.display import display, SVG
 
 def visualize_shap_on_molecule(
     mol: Chem.rdchem.Mol, 
-    shap_values: Union[List, np.ndarray], 
+    shap_values: Union[np.ndarray, List], 
     index: int, 
-    scale_factor: float = 1, 
-    fp_radius: int = 3, 
+    scale_factor: float = 1.0,
+    fp_radius: int = 3,
     nBits: int = 4096
 ) -> str:
     """
@@ -19,18 +19,15 @@ def visualize_shap_on_molecule(
     
     Args:
         mol: Target molecule (RDKit Mol object)
-        shap_values: SHAP values (list or numpy array)
+        shap_values: SHAP values (numpy array or list)
         index: Index of the molecule in the dataset
-        scale_factor: SHAP value scaling factor (default: 1)
+        scale_factor: SHAP value scaling factor (default: 1.0)
         fp_radius: Morgan fingerprint radius (default: 3)
         nBits: Number of bits in fingerprint (default: 4096)
         
     Returns:
         SVG string representation of the visualized molecule
     """
-    # Create dictionary of bits and SHAP values
-    selected_bit_num = range(nBits)
-    
     # Use class 1 SHAP values (for binary classification)
     if isinstance(shap_values, list):
         shap_array = shap_values[1][index]
@@ -41,39 +38,42 @@ def visualize_shap_on_molecule(
     if len(shap_array) >= nBits:
         shap_array = shap_array[:nBits]
     
+    # Create dictionary of bits and SHAP values
+    selected_bit_num = range(nBits)
     bit_coef = dict(zip(selected_bit_num, shap_array))
     
-    # Calculate fingerprint
-    bitI_morgan = {}
+    # Get Morgan fingerprint bit information
+    bitI_morgan: Dict[int, List] = {}
     fp_morgan = AllChem.GetMorganFingerprintAsBitVect(mol, fp_radius, nBits, bitInfo=bitI_morgan)
     
     # Extract bits with contributions
     bit_list = list(set(selected_bit_num) & set(bitI_morgan.keys()))
     
-    # Array to store contribution for each atom
+    # Generate array to store contributions
     Ai_list = np.zeros(mol.GetNumAtoms())
     
-    # Assign contribution of each bit to atoms
+    # Calculate contribution for each bit
     for bit in bit_list:
         Cn = bit_coef[bit]
         fn = len(bitI_morgan[bit])
         for part in bitI_morgan[bit]:
             if part[1] == 0:
                 i = part[0]
-                xn = 1 
+                xn = 1
                 Ai_list[i] += Cn / fn / xn
             else:
-                amap = {}
+                amap: Dict[int, int] = {}
                 env = Chem.FindAtomEnvironmentOfRadiusN(mol, radius=part[1], rootedAtAtom=part[0])
                 submol = Chem.PathToSubmol(mol, env, atomMap=amap)
                 xn = len(list(amap.keys()))
                 for i in amap.keys():
                     Ai_list[i] += Cn / fn / xn
+    
     Ai_list = Ai_list * scale_factor
     
-    # Visualization settings
+    # Set atom colors
     atoms = [i for i in range(len(Ai_list))]
-    atom_colors: Dict[int, Tuple[float, float, float]] = {}
+    atom_colors: Dict[int, Tuple[float, float, float]] = dict()
     for i in atoms:
         if Ai_list[i] > 0:
             # Positive values: red color scheme
@@ -85,7 +85,7 @@ def visualize_shap_on_molecule(
             atom_colors[i] = (1-color_value, 1-color_value, 1)
     
     # Set bond highlights
-    highlight_bonds = []
+    highlight_bonds: List[int] = []
     bond_colors: Dict[int, Tuple[float, float, float]] = {}
     
     # For each bond, calculate the average SHAP value of the connected atoms and set color
@@ -128,33 +128,45 @@ def visualize_shap_on_molecule(
     
     view.FinishDrawing()
     svg = view.GetDrawingText()
+
+    # Display and save SVG
     display(SVG(svg))
-    
+        
     return svg
 
 
 def main(
-    shap_value_path: str, 
-    dataset_path: str, 
-    target_molecule: str
+    shap_values_path: str,
+    chemical_data_path: str,
+    target_molecule: str,
+    fp_radius: int = 3,
+    nBits: int = 4096,
+    scale_factor: float = 1.0
 ) -> Optional[str]:
     """
     Main function to demonstrate SHAP visualization on a molecule
     
     Args:
-        shap_value_path: Path to the pickle file containing SHAP values
-        dataset_path: Path to the pickle file containing molecule dataset
+        shap_values_path: Path to the pickle file containing SHAP values
+        chemical_data_path: Path to the pickle file containing molecule dataset
         target_molecule: Name of the target molecule to visualize
+        fp_radius: Morgan fingerprint radius (default: 3)
+        nBits: Number of bits in fingerprint (default: 4096)
+        scale_factor: SHAP value scaling factor (default: 1.0)
         
     Returns:
         SVG string representation of the visualized molecule or None if error occurs
     """
-    
     # Load data with error handling for missing files
-    with open(shap_value_path, "rb") as f:
-        value = pickle.load(f)
-    with open(dataset_path, "rb") as f:
-        df = pickle.load(f)
+    try:
+        with open(shap_values_path, "rb") as f:
+            value = pickle.load(f)
+        with open(chemical_data_path, "rb") as f:
+            df = pickle.load(f)
+    except FileNotFoundError as e:
+        print(f"Error: {e}")
+        print("Required data files not found. Please refer to the README.md to prepare the necessary data files.")
+        return None
 
     df["NAME"] = [i[0] for i in df["compounds"]]
     
@@ -162,8 +174,17 @@ def main(
     try:
         index = df[df["NAME"] == target_molecule].index[0]
         mol = df["ROMol"][index]
-        result_svg = visualize_shap_on_molecule(mol, value, index)
-        display(SVG(result_svg))
+        shap_values = value[index].values
+        
+        # Execute visualization
+        result_svg = visualize_shap_on_molecule(
+            mol=mol, 
+            shap_values=shap_values, 
+            index=index,
+            scale_factor=scale_factor,
+            fp_radius=fp_radius,
+            nBits=nBits
+        )
         return result_svg
     except (IndexError, KeyError) as e:
         print(f"Error: Molecule '{target_molecule}' not found in the dataset.")
@@ -171,10 +192,16 @@ def main(
 
 
 if __name__ == "__main__":
-    # Example usage - replace with your actual file paths
-    shap_value_path = "shap_ecfp_value.pkl"
-    dataset_path = "10genre_dataset.pkl"
-    # Please modify according to the purpose.
-    target_molecule = "quercetin"
-    # Example usage
-    main(shap_value_path, dataset_path, target_molecule)
+    # Example usage with default values
+    shap_values_path = "shap_value_ecfp.pkl"
+    chemical_data_path = "10genre_dataset.pkl"
+    target_molecule = "quercetin" # Please modify according to the purpose.
+    
+    main(
+        shap_values_path=shap_values_path,
+        chemical_data_path=chemical_data_path,
+        target_molecule=target_molecule,
+        fp_radius=3,
+        nBits=4096,
+        scale_factor=1.0
+    )
