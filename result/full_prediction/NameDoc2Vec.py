@@ -6,7 +6,21 @@ import lightgbm as lgb
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import f1_score
 from FpDoc2vec.py import evaluate_category, create_lightgbm_classifier
-
+def make_name2vector(model_path: str, df: pd.DataFrame) -> np.ndarray:
+    """Convert to compound vectors using NameDoc2Vec model
+    
+    Args:
+        model_path: Path to the saved NameDoc2Vec model file
+        df: DataFrame containing compound data
+        
+    Returns:
+        NumPy array of document vectors with shape (len(df), vector_size)
+    """
+    model = Doc2Vec.load(model_path)
+    vec = np.array([model.dv.vectors[i] for i in range(len(df))])
+    return vec
+    
+    
 def main():
     # Load dataset
     with open("../../data/10genre_dataset.pkl", "rb") as f:
