@@ -25,14 +25,14 @@ def add_vectors(fp_list: List[List[int]], model: Doc2Vec) -> List[np.ndarray]:
 def evaluate_category(category: str, 
                       X_vec: np.ndarray, 
                       y: np.ndarray, 
-                      lightgbm_model: lgb.LGBMClassifier) -> Dict[str, Union[List[float], float]]:
+                      estimator_model) -> Dict[str, Union[List[float], float]]:
     """Evaluate model performance for a specific category using cross-validation
     
     Args:
         category: Name of the category being evaluated
         X_vec: Feature matrix as numpy array containing compound vectors
         y: Target array containing binary labels for the category
-        lightgbm_model: Pre-configured LightGBM classifier model
+        estimator_model_model: Pre-configured estimator_model model
         
     Returns:
         Dictionary containing training and test scores:
@@ -50,9 +50,9 @@ def evaluate_category(category: str,
         X_train_vec, X_test_vec = X_vec[train_idx], X_vec[test_idx]
         y_train, y_test = y[train_idx], y[test_idx]
         
-        lightgbm_model.fit(X_train_vec, y_train)
-        y_train_pred = lightgbm_model.predict(X_train_vec)
-        y_test_pred = lightgbm_model.predict(X_test_vec)
+        estimator_model.fit(X_train_vec, y_train)
+        y_train_pred = estimator_model.predict(X_train_vec)
+        y_test_pred = estimator_model.predict(X_test_vec)
         
         train_scores.append(f1_score(y_train, y_train_pred))
         test_scores.append(f1_score(y_test, y_test_pred))
