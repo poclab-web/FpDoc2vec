@@ -42,51 +42,50 @@ def create_index_mapping(df_length, invalid_indices):
             
     return original_to_filtered
 
-def evaluate_with_maccs(df, df_maccs, X_vec_maccs, categories, index_mapping):
+def evaluate_with_keys(lightgbm_model, df, df_keys, X_vec_keys, categories, index_mapping):
     """
-    Evaluate model performance using MACCS fingerprints and Doc2Vec vectors
+    Evaluate model performance using Doc2Vec vectors
     """
-    lightgbm_model = create_lightgbm_classifier()
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=0)
     
     results = {}
     for category_idx, category in enumerate(categories):
-        maccs_train_f1_list, maccs_test_f1_list = []
+        keys_train_f1_list, keys_test_f1_list = []
         
         # Prepare target variables
         y = np.array([1 if i == category else 0 for i in df[category]])
-        y_maccs = np.array([1 if i == category else 0 for i in df_maccs[category]])
+        y_keys = np.array([1 if i == category else 0 for i in df_keys[category]])
         
         for train_idx, test_idx in skf.split(range(len(df)), y):
             # Convert indices to MACCS-compatible indices
-            train_idx_maccs = [index_mapping[idx] for idx in train_idx if idx in index_mapping]
-            test_idx_maccs = [index_mapping[idx] for idx in test_idx if idx in index_mapping]
+            train_idx_keys = [index_mapping[idx] for idx in train_idx if idx in index_mapping]
+            test_idx_keys = [index_mapping[idx] for idx in test_idx if idx in index_mapping]
             
             # Only proceed if we have enough samples in both train and test sets
-            if len(train_idx_maccs) > 0 and len(test_idx_maccs) > 0:
+            if len(train_idx_keys) > 0 and len(test_idx_keyss) > 0:
                 # Extract training and testing data
-                X_train_maccs = X_vec_maccs[train_idx_maccs]
-                X_test_maccs = X_vec_maccs[test_idx_maccs]
-                y_train_maccs = y_maccs[train_idx_maccs]
-                y_test_maccs = y_maccs[test_idx_maccs]
+                X_train_keys = X_vec_keys[train_idx_keys]
+                X_test_keys = X_vec_keys[test_idx_keys]
+                y_train_keys = y_keys[train_idx_keys]
+                y_test_keys = y_keys[test_idx_keys]
                 
                 # Train model and make predictions
-                lightgbm_model.fit(X_train_maccs, y_train_maccs)
-                y_pred_train_maccs = lightgbm_model.predict(X_train_maccs)
-                y_pred_test_maccs = lightgbm_model.predict(X_test_maccs)
+                lightgbm_model.fit(X_train_keys, y_train_keys)
+                y_pred_train_keys = lightgbm_model.predict(X_train_keys)
+                y_pred_test_keys = lightgbm_model.predict(X_test_keys)
                 
                 # Calculate F1 score
-                maccs_train_f1_list.append(f1_score(y_train_maccs, y_pred_train_maccs))
-                maccs_test_f1_list.append(f1_score(y_test_maccs, y_pred_test_maccs))
+                keys_train_f1_list.append(f1_score(y_train_keys, y_pred_train_keys))
+                keys_test_f1_list.append(f1_score(y_test_keys, y_pred_test_keys))
               
-          print(f"Training Data: {np.mean(maccs_train_f1_list)}")
-          print(f"Test Data: {np.mean(maccs_test_f1_list)}")
+          print(f"Training Data: {np.mean(keys_train_f1_list)}")
+          print(f"Test Data: {np.mean(keys_test_f1_list)}")
       
     return {
-        'train_scores': maccs_train_f1_list,
-        'test_scores': maccs_test_f1_list,
-        'mean_train': np.mean(maccs_train_f1_list),
-        'mean_test': np.mean(maccs_test_f1_list)
+        'train_scores': keys_train_f1_list,
+        'test_scores': keys_test_f1_list,
+        'mean_train': np.mean(keys_train_f1_list),
+        'mean_test': np.mean(keys_test_f1_list)
     }
 
 def main():
