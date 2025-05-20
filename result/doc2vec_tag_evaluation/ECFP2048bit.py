@@ -94,7 +94,7 @@ def evaluate_category(category: str,
         'mean_test': np.mean(test_scores)
     }
 
-def build_doc2vec_model(corpus, list):
+def build_doc2vec_model(corpus, list, doc2vec_param):
     """
     Build and train a Doc2Vec model from corpus and structure infomation
     """
