@@ -70,9 +70,9 @@ def remove_highly_correlated_features(df, threshold=0.95):
     
     return df_corr.columns
 
-def main():
+def main(input_file):
     # Load data
-    with open("../../data/10genre_dataset.pkl", "rb") as f:
+    with open(input_file, "rb") as f:
         df = pickle.load(f)
     
     # Process molecule names
