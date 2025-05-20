@@ -1,10 +1,12 @@
 import numpy as np
 import pickle
+from typing import List, Dict, Tuple, Union, Optional, Any
 from numpy.linalg import norm
 from gensim.models.doc2vec import Doc2Vec
 import pandas as pd
 
-def cosine_similarity(vec1, vec2):
+
+def cosine_similarity(vec1: np.ndarray, vec2: np.ndarray) -> float:
     """
     Calculate cosine similarity between two vectors.
     
@@ -17,7 +19,8 @@ def cosine_similarity(vec1, vec2):
     """
     return np.dot(vec1, vec2) / (norm(vec1) * norm(vec2))
 
-def calculate_similarities(df, vectors, target_compound):
+
+def calculate_similarities(df: pd.DataFrame, vectors: List[np.ndarray], target_compound: str) -> List[float]:
     """
     Calculate cosine similarities between a target compound and all other compounds.
     
@@ -32,6 +35,7 @@ def calculate_similarities(df, vectors, target_compound):
     # Find the index of the target compound
     target_idx = None
     for i in range(len(df)):
+        # Please change it to the column number where the name column is stored.
         if df.iat[i, 22] == target_compound:
             target_idx = i
             break
@@ -50,7 +54,8 @@ def calculate_similarities(df, vectors, target_compound):
     
     return similarities
 
-def get_top_similar_compounds(df, target_compound, n=10):
+
+def get_top_similar_compounds(df: pd.DataFrame, target_compound: str, n: int = 10) -> pd.DataFrame:
     """
     Find the top N compounds most similar to the target compound.
     
@@ -68,10 +73,38 @@ def get_top_similar_compounds(df, target_compound, n=10):
     # Return the top N compounds (excluding the target compound itself)
     return sorted_df.head(n)[['NAME', target_compound]]
 
-def main():
-    """Load data and model, then find compounds similar to sucrose."""
+def add_vectors(fp_list: List[List[int]], model: Doc2Vec) -> List[np.ndarray]:
+    """Combine document vectors based on fingerprints
+    
+    Args:
+        fp_list: List of fingerprint lists, where each fingerprint is represented as a list of indices
+        model: Trained Doc2Vec model containing document vectors
+        
+    Returns:
+        List of compound vectors as numpy arrays
+    """
+    compound_vec = []
+    for i in fp_list:
+        fingerprint_vec = 0
+        for j in i:
+            fingerprint_vec += model.dv.vectors[j]
+        compound_vec.append(fingerprint_vec)
+    return compound_vec
+
+def main(input_path: str, model_path: str, target_compound: str = "sucrose") -> None:
+    """
+    Load data and model, then find compounds similar to the target compound.
+    
+    Args:
+        input_path: Path to the pickle file containing the dataset
+        model_path: Path to the Doc2Vec model file
+        target_compound: Name of the target compound (default: "sucrose")
+        
+    Returns:
+        None
+    """
     # Load dataset
-    with open("../../data/10genre_dataset.pkl", "rb") as f:
+    with open(input_path, "rb") as f:
         df = pickle.load(f)
     
     # Add compound names as a separate column
@@ -79,13 +112,12 @@ def main():
     
     # Get fingerprints and load model
     finger_list = list(df["fp_3_4096"])
-    model = Doc2Vec.load("../../model/fpdoc2vec4096.model")
+    model = Doc2Vec.load(model_path)
     
     # Generate compound vectors
-    compound_vec = addvec(finger_list, model)
+    compound_vec = add_vectors(finger_list, model)
     
     # Calculate similarities to sucrose
-    target_compound = "sucrose"
     df[target_compound] = calculate_similarities(df, compound_vec, target_compound)
     
     # Get top 10 similar compounds
@@ -98,5 +130,9 @@ def main():
         similarity_score = row[target_compound]
         print(f"  {compound_name}: {similarity_score:.4f}")
 
+
 if __name__ == "__main__":
-    main()
+    # Example usage - replace with your actual file paths
+    input_path = "10genre_dataset.pkl"
+    model_path = "fpdoc2vec.model"
+    main(input_path, model_path)
