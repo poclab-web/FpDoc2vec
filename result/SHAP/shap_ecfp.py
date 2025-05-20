@@ -1,32 +1,40 @@
-import numpy as np
-import shap
 import pickle
+import numpy as np
+import pandas as pd
 import lightgbm as lgb
+import shap
+from typing import Dict, List, Optional, Tuple, Union, Any
+from rdkit import Chem
 from rdkit.Chem import AllChem
-from sklearn.metrics import accuracy_score, roc_auc_score
 
-def generate_fingerprints(df):
+
+def generate_morgan_fingerprints(df: pd.DataFrame, radius: int, n_bits: int) -> np.ndarray:
     """
-    Generate Morgan fingerprints (ECFP) for molecules in the dataframe
+    Generate Morgan fingerprints for molecules in the dataframe.
     
     Args:
-        df: DataFrame containing ROMol column with RDKit molecule objects
-        
+        df: DataFrame containing RDKit molecule objects in a column named 'ROMol'
+        radius: The radius of the Morgan fingerprint. Higher values capture more extended 
+                connectivity information around each atom
+        n_bits: The length of the bit vector. Larger values reduce the chance of bit collisions
+    
     Returns:
-        numpy array of fingerprints
+        A numpy array containing fingerprints, where each row represents a molecule 
+        and each column represents a bit in the fingerprint
     """
     fingerprints = []
     for i, mol in enumerate(df["ROMol"]):
         try:
-            fingerprint = [j for j in AllChem.GetMorganFingerprintAsBitVect(mol, 3, 4096)]
+            fingerprint = [j for j in AllChem.GetMorganFingerprintAsBitVect(mol, radius, n_bits)]
             fingerprints.append(fingerprint)
         except:
-            print("Error", i)
+            print(f"Error processing molecule at index {i}")
             continue
     fingerprints = np.array(fingerprints)
     return fingerprints
 
-def train_lightgbm_model(fingerprints, target_values):
+
+def train_lightgbm_model(fingerprints: np.ndarray, target_values: np.ndarray) -> lgb.LGBMClassifier:
     """
     Train a LightGBM model with optimized hyperparameters
     
@@ -37,61 +45,58 @@ def train_lightgbm_model(fingerprints, target_values):
     Returns:
         trained LightGBM model
     """
-    model = lgb.LGBMClassifier(
-        boosting_type="dart", 
-        n_estimators=444, 
-        learning_rate=0.07284380689492893, 
-        max_depth=6, 
-        num_leaves=41, 
-        min_child_samples=21, 
-        class_weight="balanced", 
-        reg_alpha=1.4922729949843299, 
-        reg_lambda=2.8809246344115778, 
-        colsample_bytree=0.5789063337359206, 
-        subsample=0.5230422589468584, 
-        subsample_freq=2, 
-        drop_rate=0.1675163179873052, 
-        skip_drop=0.49103811434109507, 
-        objective='binary', 
-        random_state=50
-    )
     
+    model = lgb.LGBMClassifier(**params)
     model.fit(fingerprints, target_values)
     return model
 
-def calculate_shap_values(model, features):
+
+def calculate_shap_values(model: lgb.LGBMClassifier, 
+                          features: np.ndarray, 
+                          feature_perturbation: str = 'tree_path_dependent', 
+                          model_output: str = 'raw') -> np.ndarray:
     """
     Calculate SHAP values for the trained model
     
     Args:
         model: trained LightGBM model
         features: feature matrix used for explanation
+        feature_perturbation: method used to perturb features for SHAP calculation
+        model_output: type of model output to explain
         
     Returns:
         SHAP values array
     """
     explainer = shap.TreeExplainer(
         model=model,
-        feature_perturbation='tree_path_dependent',
-        model_output='raw'
+        feature_perturbation=feature_perturbation,
+        model_output=model_output
     )
     
     return explainer.shap_values(features)
 
-def main():
-    """Main function to run the SHAP analysis pipeline"""
+
+def main(input_path: str, purpose: str, output_path: str) -> None:
+    """
+    Main function to run the SHAP analysis pipeline
+    
+    Args:
+        input_path: Path to the pickled DataFrame with molecule data
+        purpose: Target biological role to analyze
+        output_path: Path to save the SHAP values output
+        
+    Returns:
+        None
+    """
     # Load dataset
-    with open("../../data/10genre_dataset.pkl", "rb") as f:
+    with open(input_path, "rb") as f:
         df = pickle.load(f)
     
     # Specify the target biological role here
-    # This example uses "antioxidant". To analyze other roles, replace "antioxidant" with:
-    # "anti-inflammatory agent", "allergen", "dye", "toxin", "flavouring agent", 
-    # "agrochemical", "volatile oil", "antibacterial agent", or "insecticide"
-    y = np.array([1 if i == 'antioxidant' else 0 for i in df['antioxidant']])
+    y = np.array([1 if i == purpose else 0 for i in df[purpose]])
     
     # Generate molecular fingerprints
-    fingerprints = generate_fingerprints(df)
+    fingerprints = generate_morgan_fingerprints(df, 3, 4096)
     
     # Train the model
     model = train_lightgbm_model(fingerprints, y)
@@ -100,8 +105,19 @@ def main():
     shap_values = calculate_shap_values(model, fingerprints)
     
     # Save SHAP values
-    with open('shap_value/antioxidant_ECFP.pkl', 'wb') as f:
+    with open(output_path, 'wb') as f:
         pickle.dump(shap_values, f)
 
+
 if __name__ == "__main__":
-    main()
+    # Note: params should be defined before this function or passed as an argument
+    params = {
+        'n_estimators': 100,
+        'learning_rate': 0.1,
+        'max_depth': 5,
+        'random_state': 42
+    }  # Example params - replace with your actual params
+    # Example usage
+    main(input_path="path/to/molecule_data.pkl", 
+         purpose="antioxidant", 
+         output_path="path/to/shap_results.pkl")
