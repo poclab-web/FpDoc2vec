@@ -97,7 +97,7 @@ def evaluate_category(category: str,
     }
 
 def build_doc2vec_model(corpus: List[List[str]], 
-                        list: List[List[int]], 
+                        li: List[List[int]], 
                         doc2vec_param: Dict[str, Any]) -> Doc2Vec:
     """
     Build and train a Doc2Vec model from corpus and structure information
@@ -111,7 +111,7 @@ def build_doc2vec_model(corpus: List[List[str]],
         Trained Doc2Vec model
     """
     tagged_documents = [
-        TaggedDocument(words=corpus, tags=list[i]) 
+        TaggedDocument(words=corpus, tags=li[i]) 
         for i, corpus in enumerate(corpus)
     ]
     
