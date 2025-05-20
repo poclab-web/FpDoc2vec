@@ -6,17 +6,22 @@ import lightgbm as lgb
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import f1_score
 
-def add_vec(fingerprint_list, model):
-    """
-    Generate compound vectors by combining fingerprints with doc2vec model
+def add_vectors(fp_list: List[List[int]], model: Doc2Vec) -> List[np.ndarray]:
+    """Combine document vectors based on fingerprints
+    
+    Args:
+        fp_list: List of fingerprint lists, where each fingerprint is represented as a list of indices
+        model: Trained Doc2Vec model containing document vectors
+        
+    Returns:
+        List of compound vectors as numpy arrays
     """
     compound_vec = []
-    for i in fingerprint_df:
+    for i in fp_list:
         fingerprint_vec = 0
         for j in i:
             fingerprint_vec += model.dv.vectors[j]
         compound_vec.append(fingerprint_vec)
-        
     return compound_vec
 
 def evaluate_category(category, X_vec, y, lightgbm_model):
@@ -49,33 +54,10 @@ def evaluate_category(category, X_vec, y, lightgbm_model):
         'mean_test': np.mean(test_scores)
     }
 
-def create_lightgbm_classifier():
-    """
-    Create and configure LightGBM classifier with optimized parameters
-    """
-    return lgb.LGBMClassifier(
-        boosting_type="dart", 
-        n_estimators=444, 
-        learning_rate=0.07284380689492893, 
-        max_depth=6, 
-        num_leaves=41, 
-        min_child_samples=21, 
-        class_weight="balanced", 
-        reg_alpha=1.4922729949843299, 
-        reg_lambda=2.8809246344115778, 
-        colsample_bytree=0.5789063337359206, 
-        subsample=0.5230422589468584, 
-        subsample_freq=2, 
-        drop_rate=0.1675163179873052, 
-        skip_drop=0.49103811434109507, 
-        objective='binary', 
-        random_state=50
-    )
 
-
-def main():
+def main(input_file, model_path):
     # Load dataset
-    with open("../../data/10genre_dataset.pkl", "rb") as f:
+    with open(input_file, "rb") as f:
         df = pickle.load(f)
         
     finger_list = list(df["fp_3_4096"])
@@ -87,10 +69,10 @@ def main():
     ]
     
     # loading Doc2Vec model
-    model = Doc2Vec.load("../../model/fpdoc2vec4096.model")
+    model = Doc2Vec.load(model_path)
     
     # Generate compound vectors
-    compound_vec = add_vec(finger_list, model)
+    compound_vec = add_vectors(finger_list, model)
     X_vec = np.array([compound_vec[i] for i in range(len(df))])
     
     # Create classifier
