@@ -70,8 +70,8 @@ def ECFP4096bit(
         Dictionary mapping categories to their training and test scores
     """
     # Generate Morgan fingerprints
-    train_desc = np.array(generate_morgan_fingerprints(train_df))
-    test_desc = np.array(generate_morgan_fingerprints(test_df))
+    train_desc = np.array(generate_morgan_fingerprints(train_df,3,4096))
+    test_desc = np.array(generate_morgan_fingerprints(test_df,3,4096))
     
     # Evaluate each category
     results = {}
