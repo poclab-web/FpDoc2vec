@@ -6,6 +6,7 @@ import lightgbm as lgb
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import f1_score
 from FpDoc2vec.py import evaluate_category, create_lightgbm_classifier
+
 def make_name2vector(model_path: str, df: pd.DataFrame) -> np.ndarray:
     """Convert to compound vectors using NameDoc2Vec model
     
