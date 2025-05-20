@@ -1,7 +1,9 @@
 import pickle
+from typing import List, Tuple, Any
 from gensim.models.doc2vec import Doc2Vec
 
-def find_similar_terms(model, query_term, top_n=10):
+
+def find_similar_terms(model: Doc2Vec, query_term: str, top_n: int = 10) -> List[Tuple[str, float]]:
     """
     Find terms that are most similar to the query term in the Doc2Vec model.
     
@@ -16,14 +18,24 @@ def find_similar_terms(model, query_term, top_n=10):
     print(f"・Similar terms to '{query_term}' with similarity scores:")
     return model.dv.most_similar(positive=query_term, topn=top_n)
 
-def main():
-    """Load data and model, then demonstrate similarity search."""
+
+def main(input_path: str, model_path: str) -> None:
+    """
+    Load data and model, then demonstrate similarity search.
+    
+    Args:
+        input_path: Path to the pickle file containing the dataset
+        model_path: Path to the trained NameDoc2Vec model file
+        
+    Returns:
+        None
+    """
     # Load dataset
-    with open("../../data/10genre_dataset.pkl", "rb") as f:
+    with open(input_path, "rb") as f:
         df = pickle.load(f)
     
     # Load pre-trained Doc2Vec model
-    model = Doc2Vec.load("../../model/namedoc2vec.model")
+    model = Doc2Vec.load(model_path)
     
     # Find terms similar to "sucrose"
     similar_terms = find_similar_terms(model, "sucrose", 10)
@@ -32,5 +44,7 @@ def main():
     for term, score in similar_terms:
         print(f"  {term}: {score:.4f}")
 
+
 if __name__ == "__main__":
-    main()
+    
+    main(input_path="path/to/your/data.pkl", model_path="path/to/your/model")
