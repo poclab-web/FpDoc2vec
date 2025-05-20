@@ -4,101 +4,65 @@ from gensim.models.doc2vec import Doc2Vec
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import f1_score
 
-def addvec(fingerprint_list, model):
-    """
-    Convert fingerprints to vector representation using Doc2Vec model
+def add_vectors(fp_list: List[List[int]], model: Doc2Vec) -> List[np.ndarray]:
+    """Combine document vectors based on fingerprints
     
     Args:
-        fingerprint_list: List of molecular fingerprints
-        model: Trained Doc2Vec model
+        fp_list: List of fingerprint lists, where each fingerprint is represented as a list of indices
+        model: Trained Doc2Vec model containing document vectors
         
     Returns:
-        List of compound vectors
+        List of compound vectors as numpy arrays
     """
-    compound_vectors = []
-    for fp in fingerprint_list:
-        compound_vectors.append(model.infer_vector(fp))
-    return compound_vectors
+    compound_vec = []
+    for i in fp_list:
+        fingerprint_vec = 0
+        for j in i:
+            fingerprint_vec += model.dv.vectors[j]
+        compound_vec.append(fingerprint_vec)
+    return compound_vec
 
-def evaluate_category(category, X_train, X_test, train_df, test_df):
-    """
-    Train and evaluate logistic regression model for a specific category
+def evaluate_category(category: str, 
+                      X_vec: np.ndarray, 
+                      y: np.ndarray, 
+                      lightgbm_model: lgb.LGBMClassifier) -> Dict[str, Union[List[float], float]]:
+    """Evaluate model performance for a specific category using cross-validation
     
     Args:
-        category: Category name to evaluate
-        X_train: Training feature vectors
-        X_test: Testing feature vectors
-        train_df: Training dataframe
-        test_df: Testing dataframe
+        category: Name of the category being evaluated
+        X_vec: Feature matrix as numpy array containing compound vectors
+        y: Target array containing binary labels for the category
+        lightgbm_model: Pre-configured LightGBM classifier model
         
     Returns:
-        Tuple of (training_f1_score, test_f1_score)
+        Dictionary containing training and test scores:
+            - train_scores: List of F1 scores for each fold (training data)
+            - test_scores: List of F1 scores for each fold (test data)
+            - mean_train: Mean F1 score across all folds (training data)
+            - mean_test: Mean F1 score across all folds (test data)
     """
     print(f"## {category} ##")
+    test_scores = []
+    train_scores = []
     
-    # Prepare labels
-    y_train = np.array([1 if i == category else 0 for i in train_df[category]])
-    y_test = np.array([1 if i == category else 0 for i in test_df[category]])
+    skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=0)
+    for train_idx, test_idx in skf.split(range(len(y)), y):
+        X_train_vec, X_test_vec = X_vec[train_idx], X_vec[test_idx]
+        y_train, y_test = y[train_idx], y[test_idx]
+        
+        lightgbm_model.fit(X_train_vec, y_train)
+        y_train_pred = lightgbm_model.predict(X_train_vec)
+        y_test_pred = lightgbm_model.predict(X_test_vec)
+        
+        train_scores.append(f1_score(y_train, y_train_pred))
+        test_scores.append(f1_score(y_test, y_test_pred))
     
-    # Train model
-    logreg = LogisticRegression(random_state=50)
-    logreg.fit(X_train, y_train)
-
-    # Calculate scores
-    y_train_pred = logreg.predict(X_train)
-    y_test_pred = logreg.predict(X_test)
+    print(f"Training Data: {np.mean(train_scores)}")
+    print(f"Test Data: {np.mean(test_scores)}")
     
-    train_score = f1_score(y_train, y_train_pred)
-    test_score = f1_score(y_test, y_test_pred)
-    
-    # Print results
-    print(f"Training Data: {train_score}")
-    print(f"Test Data: {test_score}")
-    
-    return train_score, test_score
-
-def main():
-    """
-    Main function to load data, prepare features, and evaluate models
-    for different chemical categories
-    """
-    # Load data
-    with open("../../data/test_df.pkl", "rb") as f:
-        test_df = pickle.load(f)
-    with open("../../data/train_df.pkl", "rb") as f:
-        train_df = pickle.load(f)
-    
-    # Load model
-    model = Doc2Vec.load("../../model/fpdoc2vec4096_novel.model")
-    
-    # Define categories
-    categories = ['antioxidant', 'anti_inflammatory_agent', 'allergen', 'dye', 'toxin', 
-                  'flavouring_agent', 'agrochemical', 'volatile_oil', 
-                  'antibacterial_agent', 'insecticide']
-    
-    # Prepare feature vectors
-    train_finger_list = list(train_df["fp_3_4096"])
-    test_finger_list = list(test_df["fp_3_4096"])
-    
-    train_compound_vec = addvec(train_finger_list, model)
-    test_compound_vec = addvec(test_finger_list, model)
-    
-    X_train_vec = np.array([train_compound_vec[i] for i in range(len(train_df))])
-    X_test_vec = np.array([test_compound_vec[i] for i in range(len(test_df))])
-    
-    # Evaluate each category
-    lr_train, lr_test = [], []
-    for category in categories:
-        train_score, test_score = evaluate_category(
-            category, X_train_vec, X_test_vec, train_df, test_df
-        )
-        lr_train.append(train_score)
-        lr_test.append(test_score)
-    
-    # Optional: Calculate and print average scores
-    print("\n## Average scores across all categories ##")
-    print(f"Average Training F1: {np.mean(lr_train):.4f}")
-    print(f"Average Test F1: {np.mean(lr_test):.4f}")
-
-if __name__ == "__main__":
-    main()
+    return {
+        'train_scores': train_scores,
+        'test_scores': test_scores,
+        'mean_train': np.mean(train_scores),
+        'mean_test': np.mean(test_scores)
+    }
