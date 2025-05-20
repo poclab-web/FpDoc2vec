@@ -1,3 +1,9 @@
+import pickle
+import numpy as np
+from rdkit.Chem import AllChem
+from gensim.models.doc2vec import Doc2Vec, TaggedDocument
+from Doc2Vec_training_function import generate_morgan_fingerprints, lowercasing, exact_name, train_doc2vec_model
+
 def main_doc2vec(input_file: str, output_model_name: str, param: Dict[str, Any], column_list: List[str], purpose_description: str = "description_remove_stop_words") -> None:
     """
     Load data, generate molecular fingerprints, train a Doc2Vec model and save it.
