@@ -1,16 +1,16 @@
-def main():
+def main(traindf_path, testdf_path, model_path):
     """
     Main function to load data, prepare features, and evaluate models
     for different chemical categories
     """
     # Load data
-    with open("../../data/test_df.pkl", "rb") as f:
+    with open(traindf_path, "rb") as f:
         test_df = pickle.load(f)
-    with open("../../data/train_df.pkl", "rb") as f:
+    with open(testdf_path, "rb") as f:
         train_df = pickle.load(f)
     
     # Load model
-    model = Doc2Vec.load("../../model/fpdoc2vec4096_novel.model")
+    model = Doc2Vec.load(model_path)
     
     # Define categories
     categories = ['antioxidant', 'anti_inflammatory_agent', 'allergen', 'dye', 'toxin', 
@@ -28,18 +28,18 @@ def main():
     X_test_vec = np.array([test_compound_vec[i] for i in range(len(test_df))])
     
     # Evaluate each category
-    lr_train, lr_test = [], []
+    train, test = [], []
     for category in categories:
         train_score, test_score = evaluate_category(
             category, X_train_vec, X_test_vec, train_df, test_df
         )
-        lr_train.append(train_score)
-        lr_test.append(test_score)
+        train.append(train_score)
+        test.append(test_score)
     
     # Optional: Calculate and print average scores
     print("\n## Average scores across all categories ##")
-    print(f"Average Training F1: {np.mean(lr_train):.4f}")
-    print(f"Average Test F1: {np.mean(lr_test):.4f}")
+    print(f"Average Training F1: {np.mean(train):.4f}")
+    print(f"Average Test F1: {np.mean(test):.4f}")
 
 if __name__ == "__main__":
     main()
