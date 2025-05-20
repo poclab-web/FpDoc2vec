@@ -234,6 +234,7 @@ def main(input_path: str, purpose: str, model_path: str, max_evals: int = 500000
 
 
 if __name__ == "__main__":
+    # Example usage - replace with your actual file paths
     input_path = "10genre_dataset.pkl"
     model_path = "fpdoc2vec.model"
     purpose = "antioxidant"
