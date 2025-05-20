@@ -6,38 +6,67 @@ import lightgbm as lgb
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import f1_score
 
-def generate_morgan_fingerprints(df):
+def generate_morgan_fingerprints(df: pd.DataFrame, radius: int, n_bits: int) -> np.ndarray:
     """
-    Generate Morgan fingerprints (ECFP4) for molecules in the dataframe
-    Returns a list of indices where each fingerprint bit is 1
+    Generate Morgan fingerprints for molecules in the dataframe.
+    
+    Args:
+        df: DataFrame containing RDKit molecule objects in a column named 'ROMol'
+        radius: The radius of the Morgan fingerprint. Higher values capture more extended 
+                connectivity information around each atom
+        n_bits: The length of the bit vector. Larger values reduce the chance of bit collisions
+    
+    Returns:
+        A numpy array containing fingerprints, where each row represents a molecule 
+        and each column represents a bit in the fingerprint
     """
     fingerprints = []
     for i, mol in enumerate(df["ROMol"]):
         try:
-            fingerprint = [j for j in AllChem.GetMorganFingerprintAsBitVect(mol, 2, 2048)]
+            fingerprint = [j for j in AllChem.GetMorganFingerprintAsBitVect(mol, radius, n_bits)]
             fingerprints.append(fingerprint)
         except:
-            print("Error", i)
+            print(f"Error processing molecule at index {i}")
             continue
     fingerprints = np.array(fingerprints)
-    return [[j for j in range(2048) if i[j] == 1] for i in fingerprints]
+    return fingerprints
 
-def add_vec(fingerprint_list, model):
-    """
-    Generate compound vectors by combining fingerprints with doc2vec model
+def add_vectors(fp_list: List[List[int]], model: Doc2Vec) -> List[np.ndarray]:
+    """Combine document vectors based on fingerprints
+    
+    Args:
+        fp_list: List of fingerprint lists, where each fingerprint is represented as a list of indices
+        model: Trained Doc2Vec model containing document vectors
+        
+    Returns:
+        List of compound vectors as numpy arrays
     """
     compound_vec = []
-    for i in fingerprint_df:
+    for i in fp_list:
         fingerprint_vec = 0
         for j in i:
             fingerprint_vec += model.dv.vectors[j]
         compound_vec.append(fingerprint_vec)
-        
     return compound_vec
 
-def evaluate_category(category, X_vec, y, lightgbm_model):
-    """
-    Evaluate model performance for a specific category using cross-validation
+def evaluate_category(category: str, 
+                      X_vec: np.ndarray, 
+                      y: np.ndarray, 
+                      lightgbm_model: lgb.LGBMClassifier) -> Dict[str, Union[List[float], float]]:
+    """Evaluate model performance for a specific category using cross-validation
+    
+    Args:
+        category: Name of the category being evaluated
+        X_vec: Feature matrix as numpy array containing compound vectors
+        y: Target array containing binary labels for the category
+        lightgbm_model: Pre-configured LightGBM classifier model
+        
+    Returns:
+        Dictionary containing training and test scores:
+            - train_scores: List of F1 scores for each fold (training data)
+            - test_scores: List of F1 scores for each fold (test data)
+            - mean_train: Mean F1 score across all folds (training data)
+            - mean_test: Mean F1 score across all folds (test data)
     """
     print(f"## {category} ##")
     test_scores = []
@@ -65,57 +94,22 @@ def evaluate_category(category, X_vec, y, lightgbm_model):
         'mean_test': np.mean(test_scores)
     }
 
-def build_doc2vec_model(corpus, fingerprint_list):
+def build_doc2vec_model(corpus, list):
     """
-    Build and train a Doc2Vec model from corpus and fingerprints
+    Build and train a Doc2Vec model from corpus and structure infomation
     """
     tagged_documents = [
-        TaggedDocument(words=corpus, tags=fingerprint_list[i]) 
+        TaggedDocument(words=corpus, tags=list[i]) 
         for i, corpus in enumerate(corpus)
     ]
     
-    model = Doc2Vec(
-        tagged_documents, 
-        vector_size=100, 
-        min_count=0,
-        window=10,
-        min_alpha=0.023491749982816976,
-        sample=7.343338709169564e-06,
-        epochs=859,
-        negative=2,
-        ns_exponent=0.8998927133390002,
-        workers=1, 
-        seed=100
-    )
+    model = Doc2Vec(tagged_documents, **doc2vec_param)
     
     return model
 
-def create_lightgbm_classifier():
-    """
-    Create and configure LightGBM classifier with optimized parameters
-    """
-    return lgb.LGBMClassifier(
-        boosting_type="dart", 
-        n_estimators=444, 
-        learning_rate=0.07284380689492893, 
-        max_depth=6, 
-        num_leaves=41, 
-        min_child_samples=21, 
-        class_weight="balanced", 
-        reg_alpha=1.4922729949843299, 
-        reg_lambda=2.8809246344115778, 
-        colsample_bytree=0.5789063337359206, 
-        subsample=0.5230422589468584, 
-        subsample_freq=2, 
-        drop_rate=0.1675163179873052, 
-        skip_drop=0.49103811434109507, 
-        objective='binary', 
-        random_state=50
-    )
-
-def main():
+def main(input_path):
     # Load dataset
-    with open("../../data/10genre_dataset.pkl", "rb") as f:
+    with open(input_path, "rb") as f:
         df = pickle.load(f)
         
     # Generate fingerprints
@@ -149,3 +143,33 @@ def main():
     
 if __name__ == "__main__":
     main()
+# Example usage - replace with your actual params
+    doc2vec_param = {"vector_size": 100, 
+         "min_count": 0,
+         "window": 10,
+         "min_alpha": 0.023491749982816976,
+         "sample": 7.343338709169564e-06,
+         "epochs": 859,
+         "negative": 2,
+         "ns_exponent": 0.8998927133390002,
+         "workers": 1, 
+         "seed": 100}
+
+gbm_params: Dict[str, Any] = {
+        "boosting_type": "dart", 
+        "n_estimators": 444, 
+        "learning_rate": 0.07284380689492893, 
+        "max_depth": 6, 
+        "num_leaves": 41, 
+        "min_child_samples": 21, 
+        "class_weight": "balanced", 
+        "reg_alpha": 1.4922729949843299, 
+        "reg_lambda": 2.8809246344115778, 
+        "colsample_bytree": 0.5789063337359206, 
+        "subsample": 0.5230422589468584, 
+        "subsample_freq": 2, 
+        "drop_rate": 0.1675163179873052, 
+        "skip_drop": 0.49103811434109507, 
+        "objective": 'binary', 
+        "random_state": 50
+    }
