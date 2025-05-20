@@ -1,12 +1,6 @@
-import pickle
 import numpy as np
 import pandas as pd
-import lightgbm as lgb
-from typing import Dict, List, Tuple, Any, Optional, Union
-from gensim.models.doc2vec import Doc2Vec
-from sklearn.metrics import f1_score
 from rdkit.Chem import AllChem
-from FpDoc2Vec import load_data, train_and_evaluate_model
 
 
 def generate_morgan_fingerprints(df: pd.DataFrame, radius: int, n_bits: int) -> np.ndarray:
