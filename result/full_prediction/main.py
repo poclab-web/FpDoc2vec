@@ -9,7 +9,7 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import f1_score
 
 # Imports from custom modules
-from 32Descriptors import make_descriptor
+from Descriptors import make_descriptor
 from ECFP4096bit import generate_morgan_fingerprints
 from FpDoc2vec import add_vectors, evaluate_category, make_fp2vector
 from NameDoc2Vec import make_name2vector
@@ -94,7 +94,7 @@ if __name__ == "__main__":
     name_results: Dict[str, Dict[str, float]] = main(df=df, X_vec=namevec, params=params)
 
     # ECFP approach
-    ecfp: np.ndarray = np.array(generate_morgan_fingerprints(df=df))
+    ecfp: np.ndarray = np.array(generate_morgan_fingerprints(df, 3, 4096))
     ecfp_results: Dict[str, Dict[str, float]] = main(df=df, X_vec=ecfp, params=params)
 
     # Descriptor approach
