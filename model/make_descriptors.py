@@ -1,23 +1,24 @@
 import pickle
 import pandas as pd
+from typing import Dict, List, Optional, Tuple, Union, Any
 from tqdm import tqdm
 from rdkit.Chem import Descriptors
 import numpy as np
 
-def remove_highly_correlated_features(df, threshold=0.95):
+
+def remove_highly_correlated_features(df: pd.DataFrame, threshold: float = 0.95) -> pd.Index:
     """
     Remove features with correlation coefficient above the threshold
     
     Parameters:
     -----------
     df : pandas.DataFrame
-        DataFrame containing features
     threshold : float
         Correlation threshold for feature removal (default: 0.95)
         
     Returns:
     --------
-    list
+    pandas.Index
         Names of retained features after correlation removal
     """
     df_corr = df.corr()
@@ -70,7 +71,24 @@ def remove_highly_correlated_features(df, threshold=0.95):
     
     return df_corr.columns
 
-def main(input_file):
+
+def main(input_file: str, discrete_columns: List[str], output_file: str) -> None:
+    """
+    Process molecular data by calculating descriptors and removing highly correlated features
+    
+    Parameters:
+    -----------
+    input_file : str
+        Path to the pickle file for Predictive DataFrame
+    discrete_columns : List[str]
+        List of molecular descriptor column names to analyze
+    output_file : str
+        Path to save the output pickle file with processed data
+        
+    Returns:
+    --------
+    None
+    """
     # Load data
     with open(input_file, "rb") as f:
         df = pickle.load(f)
@@ -88,17 +106,7 @@ def main(input_file):
     for i, j in tqdm(Descriptors.descList):
         df[i] = df["ROMol"].map(j)
     
-    # Define continuous descriptor columns for analysis
-    discrete_columns = ['MaxEStateIndex', 'MinEStateIndex', 'qed', 'MolWt', 'MaxPartialCharge', 
-                        'MinPartialCharge', 'FpDensityMorgan1', 'FpDensityMorgan2', 'FpDensityMorgan3', 
-                        'BCUT2D_MWHI', 'BCUT2D_MWLOW', 'BCUT2D_CHGHI', 'BCUT2D_CHGLO', 'BCUT2D_LOGPHI', 
-                        'BCUT2D_LOGPLOW', 'BCUT2D_MRHI', 'BCUT2D_MRLOW', 'BalabanJ', 'BertzCT', 'Chi0', 
-                        'Chi0n', 'Chi0v', 'Chi1', 'Chi1n', 'Chi1v', 'Chi2n', 'Chi2v', 'Chi3n', 'Chi3v', 
-                        'Chi4n', 'Chi4v', 'HallKierAlpha', 'Kappa1', 'Kappa2', 'Kappa3', 'LabuteASA', 
-                        'PEOE_VSA1', 'PEOE_VSA13', 'PEOE_VSA14', 'PEOE_VSA2', 'SMR_VSA1', 'SMR_VSA10', 
-                        'SMR_VSA2', 'SMR_VSA9', 'SlogP_VSA1', 'SlogP_VSA11', 'SlogP_VSA12', 'SlogP_VSA2', 
-                        'TPSA', 'EState_VSA1', 'EState_VSA10', 'EState_VSA11', 'EState_VSA2', 
-                        'FractionCSP3', 'MolLogP', 'MolMR']
+    
     x1_discrete = df[discrete_columns]
     
     # Remove rows with missing values
@@ -115,8 +123,23 @@ def main(input_file):
     df_con_tr = pd.concat([df, x1_done_corr], axis=1)
     
     # Save results
-    with open("10genre_32descriptor.pkl", "wb") as f:
+    with open(output_file, "wb") as f:
         pickle.dump(df_con_tr, f)
 
+
 if __name__ == "__main__":
-    main()
+    # Define continuous descriptor columns for analysis
+    discrete_columns: List[str] = ['MaxEStateIndex', 'MinEStateIndex', 'qed', 'MolWt', 'MaxPartialCharge', 
+                        'MinPartialCharge', 'FpDensityMorgan1', 'FpDensityMorgan2', 'FpDensityMorgan3', 
+                        'BCUT2D_MWHI', 'BCUT2D_MWLOW', 'BCUT2D_CHGHI', 'BCUT2D_CHGLO', 'BCUT2D_LOGPHI', 
+                        'BCUT2D_LOGPLOW', 'BCUT2D_MRHI', 'BCUT2D_MRLOW', 'BalabanJ', 'BertzCT', 'Chi0', 
+                        'Chi0n', 'Chi0v', 'Chi1', 'Chi1n', 'Chi1v', 'Chi2n', 'Chi2v', 'Chi3n', 'Chi3v', 
+                        'Chi4n', 'Chi4v', 'HallKierAlpha', 'Kappa1', 'Kappa2', 'Kappa3', 'LabuteASA', 
+                        'PEOE_VSA1', 'PEOE_VSA13', 'PEOE_VSA14', 'PEOE_VSA2', 'SMR_VSA1', 'SMR_VSA10', 
+                        'SMR_VSA2', 'SMR_VSA9', 'SlogP_VSA1', 'SlogP_VSA11', 'SlogP_VSA12', 'SlogP_VSA2', 
+                        'TPSA', 'EState_VSA1', 'EState_VSA10', 'EState_VSA11', 'EState_VSA2', 
+                        'FractionCSP3', 'MolLogP', 'MolMR']
+    # Example usage - replace with your actual file paths
+    input_file: str = "10genre_dataset.pkl"
+    output_file: str = "10genre_descriptor"
+    main(input_file, discrete_columns, output_file)
