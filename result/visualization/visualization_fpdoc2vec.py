@@ -114,49 +114,33 @@ def plot_chemical_categories(df: pd.DataFrame, dim_df: pd.DataFrame,
     
     return None
 
-
-def main(input_path: str, fpdoc2vecmodel_path: str, output_path: str) -> None:
-    """Process chemical data, generate UMAP embedding, and create visualization
+def make_name2vector(model_path: str, df: pd.DataFrame) -> np.ndarray:
+    """Convert to compound vectors using NameDoc2Vec model
     
     Args:
-        input_path: Path to the input pickle file containing chemical dataset
-        fpdoc2vecmodel_path: Path to the saved Doc2Vec model
-        output_path: Path where the output visualization will be saved
+        model_path: Path to the saved NameDoc2Vec model file
+        df: Path to the pickle file for Predictive DataFrame
         
     Returns:
-        None
+        NumPy array of document vectors with shape (len(df), vector_size)
     """
-    # Load the dataset
-    df = load_data(input_path)
+    model = Doc2Vec.load(model_path)
+    vec = np.array([model.dv.vectors[i] for i in range(len(df))])
+    return vec
     
-    # Extract fingerprints and load Doc2Vec model
+    
+def make_fp2vector(model_path: str, df: pd.DataFrame) -> np.ndarray:
+    """Convert to compound vectors using FpDoc2Vec model
+    
+    Args:
+        model_path: Path to the saved FpDoc2Vec model file
+        df: Path to the pickle file for Predictive DataFrame
+        
+    Returns:
+        NumPy array of compound vectors with shape (len(compound_vec), vector_size)
+    """
+    model = Doc2Vec.load(model_path)
     finger_list = list(df["fp_3_4096"])
-    model = Doc2Vec.load(fpdoc2vecmodel_path)
-    
-    # Generate compound vectors
     compound_vec = add_vectors(finger_list, model)
     vec = np.array(compound_vec)
-    
-    # Generate UMAP embedding
-    digits_tsne = generate_umap_embedding(vec)
-    dim_df = pd.DataFrame(digits_tsne, columns=["x", "y"])
-    
-    # Define categories and their display names
-    categories = [
-        'antioxidant', 'anti_inflammatory_agent', 'allergen', 'dye', 'toxin',
-        'flavouring_agent', 'agrochemical', 'volatile_oil', 'antibacterial_agent', 'insecticide'
-    ]
-    categories_display = [
-        '"antioxidant"', '"anti-inflammatory agent"', '"allergen"', '"dye"', '"toxin"',
-        '"flavouring agent"', '"agrochemical"', '"volatile oil"', '"antibacterial agent"', '"insecticide"'
-    ]
-    
-    # Create and save plot
-    plot_chemical_categories(df, dim_df, categories, categories_display, output_path)
-
-
-if __name__ == "__main__":
-    input_path = "10genre_dataset.pkl"
-    fpdoc2vecmodel_path = "fpdoc2vec.model"
-    output_path = "fpdoc2vec_umap.png"
-    main(input_path, fpdoc2vecmodel_path, output_path)
+    return vec
