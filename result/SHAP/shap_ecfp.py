@@ -131,8 +131,11 @@ if __name__ == "__main__":
     }
 
     model = create_lightgbm_classifier(params)
-    # Example usage
-    main(input_path="path/to/molecule_data.pkl", 
-         purpose="antioxidant", 
-         model=model,
-         output_path="path/to/shap_results.pkl")
+    # Example usage - replace with your actual file paths
+    input_path = "10genre_dataset.pkl"
+    # Please modify according to the purpose.
+    purpose="antioxidant"
+    output_path = "shap_ecfp_value.pkl"
+    target_molecule = "quercetin"
+    
+    main(input_path, purpose="antioxidant", model, output_path)
