@@ -1,7 +1,4 @@
-def main(input_path,  X_vec):
-    # Load dataset
-    with open(input_path, "rb") as f:
-        df = pickle.load(f)
+def main(df,  X_vec):
     
     # Define categories to evaluate
     categories = [
@@ -19,31 +16,33 @@ def main(input_path,  X_vec):
         results[category] = evaluate_category(category, X_vec, y, lightgbm_model)
 
 def main():
-
-
-
+input_path = "10genre_dataset.pkl"
+# Load dataset
+    with open(input_path, "rb") as f:
+        df = pickle.load(f)
+#fpdoc2vec
+    model_path = "fpdoc2vec.model"
+    fpvec = make_fp2vector(model_path, df)
 # loading Doc2Vec model
     model = Doc2Vec.load(model_path)
-    
-    # Generate compound vectors
-  finger_list = list(df["fp_3_4096"])
-    compound_vec = add_vectors(finger_list, model)
-    X_vec = np.array([compound_vec[i] for i in range(len(df))])
+main(df,  fpvec)
 
+
+
+
+#namedoc2vec
+    model_path = "namedoc2vec.model"
+    namevec = make_name2vector(model_path, df)
 # loading Doc2Vec model
-    model = Doc2Vec.load("../../model/namedoc2vec.model")
-    
-    # Generate compound vectors
-    X_vec = np.array([model.dv.vectors[i] for i in range(len(df))])
+    model = Doc2Vec.load(model_path)
+main(df,  fpvec)
 
 
+#ecfp
+ecfp = np.array(generate_morgan_fingerprints(df))
+main(df,  ecfp)
 
-
-
-
-
-# Load dataset
-    with open("../../10genre_32descriptor.pkl", "rb") as f:
-        df = pickle.load(f)
-      # Generate fingerprint
-    desc = np.array(fin(df))
+#descriptor
+input_descriptor_path = "10genre_32descriptor.pkl"
+desc = make_descriptor(input_descriptor_path)
+main(df,  ecfp)
