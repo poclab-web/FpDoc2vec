@@ -1,6 +1,6 @@
 import pickle
 from gensim.models.doc2vec import Doc2Vec, TaggedDocument
-from FpDoc2Vec_training.py import train_doc2vec_model
+from FpDoc2Vec_training import train_doc2vec_model
 
 def lowercasing(x: Any) -> Any:
     """Convert input to lowercase, handling different data types
