@@ -3,9 +3,9 @@ import numpy as np
 import pandas as pd
 import lightgbm as lgb
 import shap
-from typing import Dict, List, Optional, Tuple, Union, Any
 from rdkit import Chem
 from rdkit.Chem import AllChem
+from typing import Dict, List, Optional, Tuple, Union, Any
 
 
 def generate_morgan_fingerprints(df: pd.DataFrame, radius: int, n_bits: int) -> np.ndarray:
@@ -34,20 +34,18 @@ def generate_morgan_fingerprints(df: pd.DataFrame, radius: int, n_bits: int) -> 
     return fingerprints
 
 
-def train_lightgbm_model(fingerprints: np.ndarray, target_values: np.ndarray) -> lgb.LGBMClassifier:
+def create_lightgbm_classifier(params: Dict[str, Any]) -> lgb.LGBMClassifier:
     """
-    Train a LightGBM model with optimized hyperparameters
+    Create and configure LightGBM classifier with optimized parameters
     
     Args:
-        fingerprints: numpy array of molecular fingerprints
-        target_values: numpy array of target values (0 or 1)
+        params: Dictionary of parameters for LightGBM classifier configuration
         
     Returns:
-        trained LightGBM model
+        Configured LightGBM classifier model (not yet trained)
     """
     
     model = lgb.LGBMClassifier(**params)
-    model.fit(fingerprints, target_values)
     return model
 
 
@@ -76,13 +74,14 @@ def calculate_shap_values(model: lgb.LGBMClassifier,
     return explainer.shap_values(features)
 
 
-def main(input_path: str, purpose: str, output_path: str) -> None:
+def main(input_path: str, purpose: str, model: lgb.LGBMClassifier, output_path: str) -> None:
     """
     Main function to run the SHAP analysis pipeline
     
     Args:
         input_path: Path to the pickled DataFrame with molecule data
         purpose: Target biological role to analyze
+        model: Pre-configured LightGBM model
         output_path: Path to save the SHAP values output
         
     Returns:
@@ -99,7 +98,7 @@ def main(input_path: str, purpose: str, output_path: str) -> None:
     fingerprints = generate_morgan_fingerprints(df, 3, 4096)
     
     # Train the model
-    model = train_lightgbm_model(fingerprints, y)
+    model.fit(fingerprints, y)
     
     # Calculate SHAP values
     shap_values = calculate_shap_values(model, fingerprints)
@@ -110,14 +109,30 @@ def main(input_path: str, purpose: str, output_path: str) -> None:
 
 
 if __name__ == "__main__":
-    # Note: params should be defined before this function or passed as an argument
-    params = {
-        'n_estimators': 100,
-        'learning_rate': 0.1,
-        'max_depth': 5,
-        'random_state': 42
-    }  # Example params - replace with your actual params
+    # Define model parameters
+    # Example params - replace with your actual params
+    gbm_params: Dict[str, Any] = {
+        "boosting_type": "dart", 
+        "n_estimators": 444, 
+        "learning_rate": 0.07284380689492893, 
+        "max_depth": 6, 
+        "num_leaves": 41, 
+        "min_child_samples": 21, 
+        "class_weight": "balanced", 
+        "reg_alpha": 1.4922729949843299, 
+        "reg_lambda": 2.8809246344115778, 
+        "colsample_bytree": 0.5789063337359206, 
+        "subsample": 0.5230422589468584, 
+        "subsample_freq": 2, 
+        "drop_rate": 0.1675163179873052, 
+        "skip_drop": 0.49103811434109507, 
+        "objective": 'binary', 
+        "random_state": 50
+    }
+
+    model = create_lightgbm_classifier(params)
     # Example usage
     main(input_path="path/to/molecule_data.pkl", 
          purpose="antioxidant", 
+         model=model,
          output_path="path/to/shap_results.pkl")
