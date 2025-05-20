@@ -1,5 +1,7 @@
 import pickle
 import numpy as np
+from typing import Dict, List, Union, Any
+import pandas as pd
 from rdkit.Chem import AllChem
 from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 import lightgbm as lgb
@@ -94,9 +96,19 @@ def evaluate_category(category: str,
         'mean_test': np.mean(test_scores)
     }
 
-def build_doc2vec_model(corpus, list, doc2vec_param):
+def build_doc2vec_model(corpus: List[List[str]], 
+                        list: List[List[int]], 
+                        doc2vec_param: Dict[str, Any]) -> Doc2Vec:
     """
-    Build and train a Doc2Vec model from corpus and structure infomation
+    Build and train a Doc2Vec model from corpus and structure information
+    
+    Args:
+        corpus: List of lists containing tokenized text for each document
+        list: List of lists containing tags for each document
+        doc2vec_param: Dictionary of parameters for the Doc2Vec model
+        
+    Returns:
+        Trained Doc2Vec model
     """
     tagged_documents = [
         TaggedDocument(words=corpus, tags=list[i]) 
@@ -106,70 +118,3 @@ def build_doc2vec_model(corpus, list, doc2vec_param):
     model = Doc2Vec(tagged_documents, **doc2vec_param)
     
     return model
-
-def main(input_path):
-    # Load dataset
-    with open(input_path, "rb") as f:
-        df = pickle.load(f)
-        
-    # Generate fingerprints
-    df["fp_2_2048"] = generate_morgan_fingerprints(df)
-    finger_list = list(df["fp_2_2048"])
-    
-    # Define categories to evaluate
-    categories = [
-        'antioxidant', 'anti_inflammatory_agent', 'allergen', 'dye', 'toxin', 
-        'flavouring_agent', 'agrochemical', 'volatile_oil', 'antibacterial_agent', 'insecticide'
-    ]
-    
-    # Prepare corpus for Doc2Vec
-    corpus = [sum(doc, []) for doc in df["description_remove_stop_words"]]
-    
-    # Build Doc2Vec model
-    model = build_doc2vec_model(corpus, finger_list)
-    
-    # Generate compound vectors
-    compound_vec = add_vec(finger_list, model)
-    X_vec = np.array([compound_vec[i] for i in range(len(df))])
-    
-    # Create classifier
-    lightgbm_model = create_lightgbm_classifier()
-    
-    # Evaluate each category
-    results = {}
-    for category in categories:
-        y = np.array([1 if i == category else 0 for i in df[category]])
-        results[category] = evaluate_category(category, X_vec, y, lightgbm_model)
-    
-if __name__ == "__main__":
-    main()
-# Example usage - replace with your actual params
-    doc2vec_param = {"vector_size": 100, 
-         "min_count": 0,
-         "window": 10,
-         "min_alpha": 0.023491749982816976,
-         "sample": 7.343338709169564e-06,
-         "epochs": 859,
-         "negative": 2,
-         "ns_exponent": 0.8998927133390002,
-         "workers": 1, 
-         "seed": 100}
-
-gbm_params: Dict[str, Any] = {
-        "boosting_type": "dart", 
-        "n_estimators": 444, 
-        "learning_rate": 0.07284380689492893, 
-        "max_depth": 6, 
-        "num_leaves": 41, 
-        "min_child_samples": 21, 
-        "class_weight": "balanced", 
-        "reg_alpha": 1.4922729949843299, 
-        "reg_lambda": 2.8809246344115778, 
-        "colsample_bytree": 0.5789063337359206, 
-        "subsample": 0.5230422589468584, 
-        "subsample_freq": 2, 
-        "drop_rate": 0.1675163179873052, 
-        "skip_drop": 0.49103811434109507, 
-        "objective": 'binary', 
-        "random_state": 50
-    }
