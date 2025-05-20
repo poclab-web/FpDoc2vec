@@ -28,20 +28,21 @@ def generate_morgan_fingerprints(df: pd.DataFrame, radius: int, n_bits: int) -> 
     fingerprints = np.array(fingerprints)
     return [[j for j in range(n_bits) if i[j] == 1] for i in fingerprints]
 
-def train_fingerprint_doc2vec_model(df: pd.DataFrame, fingerprints: List[List[int]], param: Dict[str, Any]) -> Doc2Vec:
+def train_doc2vec_model(df: pd.DataFrame, tag_list: List[List[int]], param: Dict[str, Any], purpose_description: str) -> Doc2Vec:
     """
-    Train a Doc2Vec model using document descriptions and molecular fingerprints as tags.
+    Train a Doc2Vec model using document descriptions as tags.
     
     Args:
-        df: DataFrame containing preprocessed descriptions in a column named 'description_remove_stop_words'
-        fingerprints: List of lists where each inner list contains the active bit indices for a molecule's fingerprint
+        df: DataFrame containing preprocessed descriptions 
+        tag_list: List of lists where each inner list contains the tags for a document
         param: Dictionary of parameters for the Doc2Vec model initialization
+        purpose_description: Column name in df containing the preprocessed text to use for training
         
     Returns:
         A trained Doc2Vec model
     """
-    corpus = [sum(doc, []) for doc in df["description_remove_stop_words"]]
-    tagged_documents = [TaggedDocument(words=corpus, tags=fingerprints[i]) for i, corpus in enumerate(corpus)]
+    corpus = [sum(doc, []) for doc in df[purpose_description]]
+    tagged_documents = [TaggedDocument(words=corpus, tags=[tag_list[i]]) for i, doc in enumerate(corpus)]
     
     model = Doc2Vec(tagged_documents, **param)
     
@@ -72,7 +73,7 @@ def main(input_file: str, output_model_name: str, param: Dict[str, Any]) -> None
                  'flavouring_agent', 'agrochemical', 'volatile_oil', 'antibacterial_agent', 'insecticide']
     
     # Train Doc2Vec model
-    model = train_fingerprint_doc2vec_model(df, finger_list, param)
+    model = train_doc2vec_model(df, finger_list, param)
     
     # Save the model
     model.save(output_model_name)
