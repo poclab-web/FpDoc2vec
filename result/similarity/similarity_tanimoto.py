@@ -1,21 +1,24 @@
 import pickle
 import numpy as np
+from typing import List, Union, Optional
 from rdkit import DataStructs
 from rdkit.Chem import AllChem
 import pandas as pd
 
-def calculate_tanimoto_similarities(df, target_compound):
+
+def calculate_tanimoto_similarities(df: pd.DataFrame, target_compound: str) -> List[float]:
     """
     Calculate Tanimoto similarities between a target compound and all compounds.
     
     Args:
-        df: DataFrame containing compound information
+        df: DataFrame containing compound information with ROMol objects
         target_compound: Name of the target compound
         
     Returns:
-        List of Tanimoto similarity scores
+        List of Tanimoto similarity scores as floats
     """
     # Generate Morgan fingerprints for all compounds
+    # Please change it to the number of columns where the ROMol column is stored.
     morgan_fps = [AllChem.GetMorganFingerprintAsBitVect(df.iat[i, 10], 3, 4096) 
                  for i in range(len(df))]
     
@@ -34,18 +37,20 @@ def calculate_tanimoto_similarities(df, target_compound):
     
     return similarities
 
-def get_top_similar_compounds(df, similarity_scores, target_compound, n=10):
+
+def get_top_similar_compounds(df: pd.DataFrame, similarity_scores: List[float], 
+                             target_compound: str, n: int = 10) -> pd.DataFrame:
     """
     Find the top N compounds most similar to the target compound.
     
     Args:
         df: DataFrame containing compound information
-        similarity_scores: List of similarity scores
+        similarity_scores: List of similarity scores calculated from Tanimoto method
         target_compound: Name of the target compound
         n: Number of similar compounds to return (default: 10)
         
     Returns:
-        DataFrame with the top N most similar compounds
+        DataFrame with the top N most similar compounds and their similarity scores
     """
     # Add similarity scores to DataFrame
     df_copy = df.copy()
@@ -58,18 +63,27 @@ def get_top_similar_compounds(df, similarity_scores, target_compound, n=10):
     # The first one is usually the compound itself (similarity=1.0)
     return sorted_df.iloc[1:n+1][["NAME", "tanimoto"]]
 
-def main():
-    """Load data and calculate Tanimoto similarities to sucrose."""
+
+def main(input_path: str, target_compound: str) -> None:
+    """
+    Load data and calculate Tanimoto similarities to the target compound.
+    
+    Args:
+        input_path: Path to the pickle file containing the compound DataFrame
+        target_compound: Name of the target compound to compare against
+        
+    Returns:
+        None
+    """
     # Load dataset
-    with open("../../data/10genre_dataset.pkl", "rb") as f:
+    with open(input_path, "rb") as f:
         df = pickle.load(f)
     
     # Add compound names as a separate column if not already present
     if "NAME" not in df.columns:
         df["NAME"] = [df.iat[i, 0][0] for i in range(len(df))]
     
-    # Calculate Tanimoto similarities to sucrose
-    target_compound = "sucrose"
+    # Calculate Tanimoto similarities to target compound
     tanimoto_similarities = calculate_tanimoto_similarities(df, target_compound)
     
     # Get top 10 similar compounds
@@ -82,5 +96,6 @@ def main():
         similarity_score = row["tanimoto"]
         print(f"  {compound_name}: {similarity_score:.4f}")
 
+
 if __name__ == "__main__":
-    main()
+    main(input_path="path/to/your/data.pkl", target_compound="sucrose")
