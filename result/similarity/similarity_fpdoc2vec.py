@@ -1,6 +1,7 @@
 import numpy as np
 from typing import List, Dict, Tuple, Union, Optional, Any
 from numpy.linalg import norm
+from gensim.models.doc2vec import Doc2Vec
 import pandas as pd
 
 
