@@ -4,8 +4,8 @@ import pandas as pd
 from typing import Dict, List, Union, Callable, Optional, Any, Tuple
 from rdkit import Chem
 from rdkit.Chem import PandasTools, AllChem
-from data_loading.py import mol_to_inchikey
-from preprocessing.py import lowercasing
+from data_loading import mol_to_inchikey
+from preprocessing import lowercasing
 
 
 def add_property_column(df: pd.DataFrame, property_name: str, sdf_path: str) -> pd.DataFrame:
