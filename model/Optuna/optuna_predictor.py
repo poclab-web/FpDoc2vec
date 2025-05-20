@@ -160,7 +160,6 @@ def optimize_model(
 
 
 def run_optimization(
-    model_name: str, 
     model_creator: Callable[[Dict], Model], 
     param_creator: Callable[[optuna.Trial], Dict], 
     train_df: pd.DataFrame, 
@@ -174,7 +173,6 @@ def run_optimization(
     Run the entire optimization process
     
     Args:
-        model_name: Model name
         model_creator: Function that creates model instance
         param_creator: Function that creates parameter space
         train_df: Training dataframe
