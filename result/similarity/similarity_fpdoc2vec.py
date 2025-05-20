@@ -97,7 +97,7 @@ def main(input_path: str, model_path: str, target_compound: str = "sucrose") -> 
     
     Args:
         input_path: Path to the pickle file containing the dataset
-        model_path: Path to the Doc2Vec model file
+        model_path: Path to the FpDoc2Vec model file
         target_compound: Name of the target compound (default: "sucrose")
         
     Returns:
