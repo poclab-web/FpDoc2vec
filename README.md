@@ -87,5 +87,9 @@ with open("your activity dataset, "rb") as f:
 # Performance
 Please look up performances from the paper ['Predicting Chemical Roles from Database Descriptions Using Natural Language Processing'](URL here)
 
+# Data Source
+This repository uses [ChEBI Database](https://www.ebi.ac.uk/chebi/) and [PubChem Database](https://pubchem.ncbi.nlm.nih.gov/).
+
+
 # Contact
 Please email to gotoh-hiroaki-yw\[at\]ynu.ac.jp if you have any questions or comments.
