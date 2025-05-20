@@ -48,7 +48,7 @@ def train_doc2vec_model(df: pd.DataFrame, tag_list: List[List[int]], param: Dict
     
     return model
 
-def main(input_file: str, output_model_name: str, param: Dict[str, Any]) -> None:
+def main(input_file: str, output_model_name: str, param: Dict[str, Any], purpose_description: str = "description_remove_stop_words") -> None:
     """
     Load data, generate molecular fingerprints, train a Doc2Vec model and save it.
     
@@ -56,6 +56,8 @@ def main(input_file: str, output_model_name: str, param: Dict[str, Any]) -> None
         input_file: Path to a pickle file containing a pandas DataFrame with molecule data
         output_model_name: File path where the trained Doc2Vec model will be saved
         param: Dictionary of parameters for the Doc2Vec model initialization
+        purpose_description: Column name in DataFrame containing preprocessed text for model training
+                            (default: "description_remove_stop_words")
         
     Returns:
         None
@@ -72,8 +74,8 @@ def main(input_file: str, output_model_name: str, param: Dict[str, Any]) -> None
     categories = ['antioxidant', 'anti_inflammatory_agent', 'allergen', 'dye', 'toxin', 
                  'flavouring_agent', 'agrochemical', 'volatile_oil', 'antibacterial_agent', 'insecticide']
     
-    # Train Doc2Vec model
-    model = train_doc2vec_model(df, finger_list, param)
+    # Train Doc2Vec model with the specified text column
+    model = train_doc2vec_model(df, finger_list, param, purpose_description)
     
     # Save the model
     model.save(output_model_name)
@@ -95,4 +97,4 @@ if __name__ == "__main__":
     # Example usage - replace with your actual file paths
     input_file = "10genre_dataset.pkl"
     output_model_name = "fpdoc2vec.model"
-    main(input_file, output_model_name)
+    main(input_file, output_model_name, param)
