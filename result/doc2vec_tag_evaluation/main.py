@@ -10,7 +10,7 @@ from sklearn.metrics import f1_score
 from ECFP2048bit import generate_morgan_fingerprints, add_vectors, evaluate_category, build_doc2vec_model
 from MACCSkeys import generate_maccs_fingerprints, create_index_mapping, evaluate_with_keys
 from pharmacophore import process_pharmacophore_features
-from smiles_to_ngrams import smiles_to_ngrams, make_ngramlist
+from smiles_to_ngram import smiles_to_ngrams, make_ngramlist
 
 
 def main(input_path: str, feature_list: List[Any], doc2vec_param: Dict[str, Any], 
