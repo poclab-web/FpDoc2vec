@@ -7,7 +7,7 @@ from FpDoc2Vec.py import load_data, create_lightgbm_classifier, train_and_evalua
 
 def main():
     # Load dataset
-    with open("../../data/10genre_32descriptor.pkl", "rb") as f:
+    with open(input_, "rb") as f:
       df = pickle.load(f)
     train_df, test_df = load_data()
         
