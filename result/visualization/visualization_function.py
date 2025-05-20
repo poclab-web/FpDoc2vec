@@ -119,7 +119,7 @@ def make_name2vector(model_path: str, df: pd.DataFrame) -> np.ndarray:
     
     Args:
         model_path: Path to the saved NameDoc2Vec model file
-        df: Path to the pickle file for Predictive DataFrame
+        df: DataFrame containing compound data
         
     Returns:
         NumPy array of document vectors with shape (len(df), vector_size)
@@ -134,7 +134,7 @@ def make_fp2vector(model_path: str, df: pd.DataFrame) -> np.ndarray:
     
     Args:
         model_path: Path to the saved FpDoc2Vec model file
-        df: Path to the pickle file for Predictive DataFrame
+        df: DataFrame containing compound data with 'fp_3_4096' column
         
     Returns:
         NumPy array of compound vectors with shape (len(compound_vec), vector_size)
