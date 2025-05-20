@@ -22,47 +22,42 @@ def add_vectors(fp_list: List[List[int]], model: Doc2Vec) -> List[np.ndarray]:
         compound_vec.append(fingerprint_vec)
     return compound_vec
 
-def evaluate_category(category: str, 
-                      X_vec: np.ndarray, 
-                      y: np.ndarray, 
-                      estimator_model) -> Dict[str, Union[List[float], float]]:
-    """Evaluate model performance for a specific category using cross-validation
+def train_and_evaluate_model(
+    train_df: Any, 
+    test_df: Any, 
+    X_train: np.ndarray, 
+    X_test: np.ndarray, 
+    category: str, 
+    estimator
+) -> Dict[str, float]:
+    """Train and evaluate LightGBM model for a specific category
     
     Args:
-        category: Name of the category being evaluated
-        X_vec: Feature matrix as numpy array containing compound vectors
-        y: Target array containing binary labels for the category
-        estimator_model_model: Pre-configured estimator_model model
+        train_df: Training dataframe containing category labels
+        test_df: Test dataframe containing category labels
+        X_train: Training feature matrix as numpy array
+        X_test: Test feature matrix as numpy array
+        category: Category name to use as target variable
+        estimator: classifier model instance
         
     Returns:
-        Dictionary containing training and test scores:
-            - train_scores: List of F1 scores for each fold (training data)
-            - test_scores: List of F1 scores for each fold (test data)
-            - mean_train: Mean F1 score across all folds (training data)
-            - mean_test: Mean F1 score across all folds (test data)
+        Dictionary containing training and test F1 scores
     """
-    print(f"## {category} ##")
-    test_scores = []
-    train_scores = []
+    y_train = np.array([1 if i == category else 0 for i in train_df[category]])
+    y_test = np.array([1 if i == category else 0 for i in test_df[category]])
     
-    skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=0)
-    for train_idx, test_idx in skf.split(range(len(y)), y):
-        X_train_vec, X_test_vec = X_vec[train_idx], X_vec[test_idx]
-        y_train, y_test = y[train_idx], y[test_idx]
-        
-        estimator_model.fit(X_train_vec, y_train)
-        y_train_pred = estimator_model.predict(X_train_vec)
-        y_test_pred = estimator_model.predict(X_test_vec)
-        
-        train_scores.append(f1_score(y_train, y_train_pred))
-        test_scores.append(f1_score(y_test, y_test_pred))
-    
-    print(f"Training Data: {np.mean(train_scores)}")
-    print(f"Test Data: {np.mean(test_scores)}")
+    estimator.fit(X_train, y_train)
+
+    y_train_pred = estimator.predict(X_train)
+    y_test_pred = estimator.predict(X_test)
+
+    train_f1 = f1_score(y_train, y_train_pred)
+    test_f1 = f1_score(y_test, y_test_pred)
+
+    print(f"Training Data: {train_f1}")
+    print(f"Test Data: {test_f1}")
     
     return {
-        'train_scores': train_scores,
-        'test_scores': test_scores,
-        'mean_train': np.mean(train_scores),
-        'mean_test': np.mean(test_scores)
+        'train_scores': train_f1,
+        'test_scores': test_f1
     }
