@@ -25,15 +25,15 @@ def smiles_to_ngrams(smiles_list, n):
         else:
             ngrams_list.append([smiles[i:i+n] for i in range(len(smiles) - n + 1)])
     return ngrams_list
-  
-def main():
+
+def make_ngramlist(input_path, n=3):
     # Load dataset
-    with open("../../data/10genre_dataset.pkl", "rb") as f:
+    with open(input_path, "rb") as f:
         df = pickle.load(f)
       
     # Generate n-grams from SMILES   
     smiles_list = list(df["smiles"])
-    ngrams_list = smiles_to_ngrams(smiles_list, 3)
+    ngrams_list = smiles_to_ngrams(smiles_list, n)
 
     # Convert n-grams to binary vectors
     vectorizer = CountVectorizer(binary=True, analyzer=lambda x: x)
@@ -47,6 +47,11 @@ def main():
             if i[j] == 1:
                 li.append(j)
         ngram_list.append(li)
+        
+    return ngram_list
+
+
+def main(input_path):
     
     # Define categories to evaluate
     categories = [
