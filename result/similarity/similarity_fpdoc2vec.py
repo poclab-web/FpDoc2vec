@@ -1,8 +1,6 @@
 import numpy as np
-import pickle
 from typing import List, Dict, Tuple, Union, Optional, Any
 from numpy.linalg import norm
-from gensim.models.doc2vec import Doc2Vec
 import pandas as pd
 
 
@@ -90,49 +88,3 @@ def add_vectors(fp_list: List[List[int]], model: Doc2Vec) -> List[np.ndarray]:
             fingerprint_vec += model.dv.vectors[j]
         compound_vec.append(fingerprint_vec)
     return compound_vec
-
-def main(input_path: str, model_path: str, target_compound: str = "sucrose") -> None:
-    """
-    Load data and model, then find compounds similar to the target compound.
-    
-    Args:
-        input_path: Path to the pickle file containing the dataset
-        model_path: Path to the FpDoc2Vec model file
-        target_compound: Name of the target compound (default: "sucrose")
-        
-    Returns:
-        None
-    """
-    # Load dataset
-    with open(input_path, "rb") as f:
-        df = pickle.load(f)
-    
-    # Add compound names as a separate column
-    df["NAME"] = [df.iat[i, 0][0] for i in range(len(df))]
-    
-    # Get fingerprints and load model
-    finger_list = list(df["fp_3_4096"])
-    model = Doc2Vec.load(model_path)
-    
-    # Generate compound vectors
-    compound_vec = add_vectors(finger_list, model)
-    
-    # Calculate similarities to sucrose
-    df[target_compound] = calculate_similarities(df, compound_vec, target_compound)
-    
-    # Get top 10 similar compounds
-    top_similar = get_top_similar_compounds(df, target_compound, 10)
-    
-    # Display results in the same format as the previous code
-    print(f"・Similar terms to '{target_compound}' with similarity scores:")
-    for idx, row in top_similar.iterrows():
-        compound_name = row['NAME']
-        similarity_score = row[target_compound]
-        print(f"  {compound_name}: {similarity_score:.4f}")
-
-
-if __name__ == "__main__":
-    # Example usage - replace with your actual file paths
-    input_path = "10genre_dataset.pkl"
-    model_path = "fpdoc2vec.model"
-    main(input_path, model_path)
