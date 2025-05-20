@@ -79,7 +79,7 @@ def main(input_file: str, discrete_columns: List[str], output_file: str) -> None
     Parameters:
     -----------
     input_file : str
-        Path to the pickle file for Predictive DataFrame
+        Path to a pickle file containing a pandas DataFrame with molecule data
     discrete_columns : List[str]
         List of molecular descriptor column names to analyze
     output_file : str
