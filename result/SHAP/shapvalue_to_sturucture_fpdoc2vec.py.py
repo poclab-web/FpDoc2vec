@@ -6,9 +6,9 @@ from rdkit.Chem import AllChem, rdDepictor, rdMolDraw2D
 from IPython.display import display, SVG
 
 
-def visualize_shap_on_molecule(
+def visualize_shap_on_mol(
     mol: Chem.rdchem.Mol, 
-    shap_values: Union[np.ndarray, List], 
+    shap_values: np.ndarray, 
     index: int, 
     scale_factor: float = 1.0,
     fp_radius: int = 3,
@@ -19,7 +19,7 @@ def visualize_shap_on_molecule(
     
     Args:
         mol: Target molecule (RDKit Mol object)
-        shap_values: SHAP values (numpy array or list)
+        shap_values: SHAP values (numpy array)
         index: Index of the molecule in the dataset
         scale_factor: SHAP value scaling factor (default: 1.0)
         fp_radius: Morgan fingerprint radius (default: 3)
@@ -28,19 +28,9 @@ def visualize_shap_on_molecule(
     Returns:
         SVG string representation of the visualized molecule
     """
-    # Use class 1 SHAP values (for binary classification)
-    if isinstance(shap_values, list):
-        shap_array = shap_values[1][index]
-    else:
-        shap_array = shap_values[index]
-    
-    # Check and adjust size
-    if len(shap_array) >= nBits:
-        shap_array = shap_array[:nBits]
-    
     # Create dictionary of bits and SHAP values
-    selected_bit_num = range(nBits)
-    bit_coef = dict(zip(selected_bit_num, shap_array))
+    selected_bit_num = [i for i in range(nBits)]
+    bit_coef = dict(zip(selected_bit_num, shap_values))
     
     # Get Morgan fingerprint bit information
     bitI_morgan: Dict[int, List] = {}
@@ -175,33 +165,25 @@ def main(
         index = df[df["NAME"] == target_molecule].index[0]
         mol = df["ROMol"][index]
         shap_values = value[index].values
-        
-        # Execute visualization
-        result_svg = visualize_shap_on_molecule(
-            mol=mol, 
-            shap_values=shap_values, 
-            index=index,
-            scale_factor=scale_factor,
-            fp_radius=fp_radius,
-            nBits=nBits
-        )
-        return result_svg
     except (IndexError, KeyError) as e:
         print(f"Error: Molecule '{target_molecule}' not found in the dataset.")
         return None
 
+    # Execute visualization
+    result_svg = visualize_shap_on_mol(
+        mol=mol, 
+        shap_values=shap_values, 
+        index=index,
+        scale_factor=scale_factor,
+        fp_radius=fp_radius,
+        nBits=nBits
+    )
+    return result_svg
+
 
 if __name__ == "__main__":
     # Example usage with default values
-    shap_values_path = "shap_value_ecfp.pkl"
+    shap_values_path = "shap_value_doc2vec.pkl"
     chemical_data_path = "10genre_dataset.pkl"
     target_molecule = "quercetin" # Please modify according to the purpose.
-    
-    main(
-        shap_values_path=shap_values_path,
-        chemical_data_path=chemical_data_path,
-        target_molecule=target_molecule,
-        fp_radius=3,
-        nBits=4096,
-        scale_factor=1.0
-    )
+    main(shap_values_path, chemical_data_path, target_molecule, fp_radius=3, nBits=4096, scale_factor=1.0)
