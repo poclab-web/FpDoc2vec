@@ -238,8 +238,8 @@ if __name__ == "__main__":
     # Example usage - replace with your actual file paths
     input_path = "10genre_dataset.pkl"
     model_path = "fpdoc2vec.model"
-    purpose = "antioxidant"
-    output_path = "shap_values.pkl"
+    purpose = "antioxidant" # Please modify according to the purpose.
+    output_path = "shap_value_fpdoc2vec.pkl"
     # Example params - replace with your actual params
     gbm_params: Dict[str, Any] = {
         "boosting_type": "dart", 
