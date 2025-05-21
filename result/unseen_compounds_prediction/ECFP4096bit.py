@@ -28,7 +28,7 @@ def generate_morgan_fingerprints(df: pd.DataFrame, radius: int, n_bits: int) -> 
     fingerprints = np.array(fingerprints)
     return fingerprints
 
-def ECFP4096bit(
+def main_ecfp(
     train_df: pd.DataFrame, 
     test_df: pd.DataFrame, 
     categories: List[str], 
