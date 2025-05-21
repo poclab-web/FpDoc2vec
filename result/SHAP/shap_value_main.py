@@ -29,7 +29,7 @@ purpose="antioxidant"
 output_path = "shap_ecfp_value.pkl"
 target_molecule = "quercetin"
 
-main(input_path, purpose="antioxidant", model, output_path)
+main_ecfp(input_path, purpose="antioxidant", model, output_path)
 
 
 # Example usage - replace with your actual file paths
@@ -56,4 +56,4 @@ gbm_params: Dict[str, Any] = {
     "objective": 'binary', 
     "random_state": 50
 }
-main(input_path, purpose, model_path, gbm_params, max_evals = 500000, output_path)
+main_fpdoc2vec(input_path, purpose, model_path, gbm_params, max_evals = 500000, output_path)
