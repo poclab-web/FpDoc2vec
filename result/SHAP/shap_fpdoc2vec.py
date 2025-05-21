@@ -1,6 +1,7 @@
 import sklearn
 from sklearn.preprocessing import FunctionTransformer
 from sklearn.pipeline import Pipeline
+from sklearn.base import BaseEstimator
 from typing import Tuple, Callable
 import numpy as np
 from typing import Union
@@ -11,6 +12,7 @@ from gensim.models import Doc2Vec
 import lightgbm as lgb
 from rdkit.Chem import AllChem
 from shap_ecfp import generate_morgan_fingerprints, create_lightgbm_classifier
+from typing import Tuple, Callable, List, Dict, Optional, Any 
 
 class _XOR_Tabular(shap.maskers.Independent):
     def __init__(self, data: np.ndarray, max_samples: int = 100):
