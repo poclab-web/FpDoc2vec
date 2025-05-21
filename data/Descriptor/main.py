@@ -1,3 +1,4 @@
+from typing import List
 from make_descriptor import remove_highly_correlated_features, main
 
 # Define continuous descriptor columns for analysis
