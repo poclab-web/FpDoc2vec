@@ -13,7 +13,7 @@ from gensim.models.doc2vec import Doc2Vec, TaggedDocument
 from ECFP2048bit import generate_morgan_fingerprints, add_vectors, evaluate_category, build_doc2vec_model, main
 from MACCSkeys import generate_maccs_fingerprints, create_index_mapping, evaluate_with_keys, main_maccs
 from pharmacophore import process_pharmacophore_features, main_pharma
-from smiles_to_ngram import smiles_to_ngrams, make_ngramlist, make_ngramlist
+from smiles_ngram import smiles_to_ngrams, make_ngramlist
 
 
 # Example usage - replace with your actual params
