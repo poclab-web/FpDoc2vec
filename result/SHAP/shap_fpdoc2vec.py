@@ -188,7 +188,7 @@ def shap_visualize(shap_values: shap.Explanation,
             kwargs = plot_kwg['violin'] or {}
             shap.plots.violin(shap_values, show=show_option, **kwargs)
 
-def main(input_path: str, purpose: str, model_path: str, params: Dict[str, Any], max_evals: int, output_path: str) -> None:
+def main_doc2vec(input_path: str, purpose: str, model_path: str, params: Dict[str, Any], max_evals: int, output_path: str) -> None:
     """
     Main function to run the SHAP analysis pipeline
     
@@ -232,31 +232,3 @@ def main(input_path: str, purpose: str, model_path: str, params: Dict[str, Any],
     # Save SHAP values
     with open(output_path, 'wb') as f:
         pickle.dump(value, f)
-
-
-if __name__ == "__main__":
-    # Example usage - replace with your actual file paths
-    input_path = "10genre_dataset.pkl"
-    model_path = "fpdoc2vec.model"
-    purpose = "antioxidant" # Please modify according to the purpose.
-    output_path = "shap_value_fpdoc2vec.pkl"
-    # Example params - replace with your actual params
-    gbm_params: Dict[str, Any] = {
-        "boosting_type": "dart", 
-        "n_estimators": 444, 
-        "learning_rate": 0.07284380689492893, 
-        "max_depth": 6, 
-        "num_leaves": 41, 
-        "min_child_samples": 21, 
-        "class_weight": "balanced", 
-        "reg_alpha": 1.4922729949843299, 
-        "reg_lambda": 2.8809246344115778, 
-        "colsample_bytree": 0.5789063337359206, 
-        "subsample": 0.5230422589468584, 
-        "subsample_freq": 2, 
-        "drop_rate": 0.1675163179873052, 
-        "skip_drop": 0.49103811434109507, 
-        "objective": 'binary', 
-        "random_state": 50
-    }
-    main(input_path, purpose, model_path, gbm_params, max_evals = 500000, output_path)
