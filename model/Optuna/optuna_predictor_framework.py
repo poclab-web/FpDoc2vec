@@ -14,6 +14,7 @@ from numpy.typing import NDArray
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier, ExtraTreesClassifier, AdaBoostClassifier
 import xgboost as xgb
+import lightgbm as lgb
 
 # Type variables for clearer type hints
 Model = TypeVar('Model')
@@ -134,7 +135,6 @@ class ProgressCallback:
 def optimize_model(
     objective: Callable[[optuna.Trial], float], 
     n_trials: int, 
-    model_name: str
 ) -> Dict[str, Any]:
     """
     Optimize model hyperparameters
@@ -142,7 +142,6 @@ def optimize_model(
     Args:
         objective: Optuna objective function
         n_trials: Number of trials
-        model_name: Model name (used for result filename)
     
     Returns:
         Best parameters found
@@ -197,7 +196,7 @@ def run_optimization(
     )
     
     # Run parameter optimization
-    return optimize_model(objective, n_trials, model_name)
+    return optimize_model(objective, n_trials)
 
 
 def prepare_data(
