@@ -1,4 +1,8 @@
-# Imports from custom modules
+import pickle
+import numpy as np
+import pandas as pd
+from typing import Dict, List, Any
+from gensim.models.doc2vec import Doc2Vec
 from Descriptors import make_descriptor
 from ECFP4096bit import generate_morgan_fingerprints
 from FpDoc2vec import add_vectors, evaluate_category, make_fp2vector, main
@@ -59,4 +63,4 @@ ecfp_results: Dict[str, Dict[str, float]] = main(df=df, X_vec=ecfp, params=param
 # Example paths - replace with actual paths
 input_descriptor_path: str = "10genre_32descriptor.pkl"
 desc: np.ndarray = make_descriptor(input_path=input_descriptor_path)
-    desc_results: Dict[str, Dict[str, float]] = main(df=df, X_vec=desc, params=params)
+desc_results: Dict[str, Dict[str, float]] = main(df=df, X_vec=desc, params=params)
