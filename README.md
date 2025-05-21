@@ -1,4 +1,4 @@
-[![DOI](svg name)](doi name)
+[![DOI](https://zenodo.org/badge/981953595.svg)](https://doi.org/10.5281/zenodo.15479457)
 
 # FpDoc2vec
 Research code for the FpDoc2vec model that predicts chemical roles from database descriptions using NLP. Code used in the paper ['Predicting Chemical Roles from Database Descriptions Using Natural Language Processing'](URL here)
