@@ -1,6 +1,7 @@
 from make_descriptor import remove_highly_correlated_features, main
 
 # Define continuous descriptor columns for analysis
+# Please change the descriptor if necessary.
 discrete_columns: List[str] = ['MaxEStateIndex', 'MinEStateIndex', 'qed', 'MolWt', 'MaxPartialCharge', 
                     'MinPartialCharge', 'FpDensityMorgan1', 'FpDensityMorgan2', 'FpDensityMorgan3', 
                     'BCUT2D_MWHI', 'BCUT2D_MWLOW', 'BCUT2D_CHGHI', 'BCUT2D_CHGLO', 'BCUT2D_LOGPHI', 
