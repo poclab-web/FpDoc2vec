@@ -89,3 +89,43 @@ def add_vectors(fp_list: List[List[int]], model: Doc2Vec) -> List[np.ndarray]:
             fingerprint_vec += model.dv.vectors[j]
         compound_vec.append(fingerprint_vec)
     return compound_vec
+
+def similarity_fpdoc2vec(input_path: str, model_path: str, target_compound: str = "sucrose", n: int = 10) -> None:
+    """
+    Load data and model, then find compounds similar to the target compound.
+    
+    Args:
+        input_path: Path to the pickle file containing the dataset
+        model_path: Path to the FpDoc2Vec model file
+        target_compound: Name of the target compound (default: "sucrose")
+        n: Number of similar compounds to return (default: 10)
+        
+    Returns:
+        None
+    """
+    # Load dataset
+    with open(input_path, "rb") as f:
+        df = pickle.load(f)
+    
+    # Add compound names as a separate column
+    df["NAME"] = [df.iat[i, 0][0] for i in range(len(df))]
+    
+    # Get fingerprints and load model
+    finger_list = list(df["fp_3_4096"])
+    model = Doc2Vec.load(model_path)
+    
+    # Generate compound vectors
+    compound_vec = add_vectors(finger_list, model)
+    
+    # Calculate similarities to sucrose
+    df[target_compound] = calculate_similarities(df, compound_vec, target_compound)
+    
+    # Get top n similar compounds
+    top_similar = get_top_similar_compounds(df, target_compound, n)
+    
+    # Display results in the same format as the previous code
+    print(f"・Similar terms to '{target_compound}' with similarity scores:")
+    for idx, row in top_similar.iterrows():
+        compound_name = row['NAME']
+        similarity_score = row[target_compound]
+        print(f"  {compound_name}: {similarity_score:.4f}")
