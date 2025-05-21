@@ -3,6 +3,7 @@ import numpy as np
 from gensim.models.doc2vec import Doc2Vec
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import f1_score
+from typing import List
 
 def add_vectors(fp_list: List[List[int]], model: Doc2Vec) -> List[np.ndarray]:
     """Combine document vectors based on fingerprints
