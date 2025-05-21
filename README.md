@@ -135,12 +135,13 @@ with open("your activity dataset, "rb") as f:
   dataset = pickle.load(f)
 
 # variables define
-mol = dataset["ROMol]
+mol = dataset["ROMol"]
 index = dataset.index[0]
 scale_factor = 1.0 # Change as you want
 fp_radius = 3 # Set same condition as previous
 nBits = 4096 # Set same condition as previous
 
+# View mapping
 result_svg = visualize_shap_on_mol(
         mol=mol, 
         shap_values=shap_values, 
@@ -149,8 +150,6 @@ result_svg = visualize_shap_on_mol(
         fp_radius=fp_radius,
         nBits=nBits
     )
-
-"plot function"(shap, dataset)
 ```
 
 # Othe Details
