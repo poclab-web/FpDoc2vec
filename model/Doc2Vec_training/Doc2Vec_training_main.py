@@ -1,5 +1,5 @@
 from Doc2Vec_training_function import generate_morgan_fingerprints, lowercasing, exact_name, train_doc2vec_model, main_doc2vec
-
+import pickle
 # Example usage - replace with your actual params
 # Please change the parameter values as you like.
 param = {"vector_size": 100, 
@@ -13,19 +13,23 @@ param = {"vector_size": 100,
      "workers": 1, 
      "seed": 100}
 
+input_file = "10genre_dataset.pkl"
+with open(input_file, "rb") as f:
+     df = pickle.load(f)
+
+
 # Building FpDoc2Vec model
 # Example usage - replace with your actual file paths
-input_file = "10genre_dataset.pkl"
 output_model_name = "fpdoc2vec.model"
 finger_list = list(df["fp_3_4096"])
-main_doc2vec(input_file, output_model_name, param, finger_list)
+main_doc2vec(input_file, output_model_name, param, finger_list, purpose_description="description_remove_stop_words")
 
 # Building NameDoc2Vec model
 # Extract compound names
 allcompounds = exact_name(df)
 # Example usage - replace with your actual file paths
 output_model_name = "namedoc2vec.model"
-main_doc2vec(input_file, output_model_name, param, allcompounds)
+main_doc2vec(input_file, output_model_name, param, allcompounds, purpose_description="description_remove_stop_words")
 
 # Building FpDoc2Vec model for unseen compounds
 # Generate fingerprints
@@ -36,4 +40,4 @@ finger_list = list(df["fp_3_4096"])
 
 # Example usage - replace with your actual file paths
 output_model_name = "fpdoc2vec_unseen.model"
-main_doc2vec(input_file, output_model_name, param, finger_list)
+main_doc2vec(input_file, output_model_name, param, finger_list, purpose_description="description_remove_stop_words")
