@@ -6,9 +6,9 @@ from typing import Dict, List, Tuple, Any, Optional, Union
 from gensim.models.doc2vec import Doc2Vec
 from sklearn.metrics import f1_score
 from rdkit.Chem import AllChem
-from FpDoc2Vec import add_vectors, load_data, train_and_evaluate_model
-from ECFP4096bit import generate_morgan_fingerprints
-
+from FpDoc2Vec import add_vectors, load_data, train_and_evaluate_model, main_fpdoc2vec
+from ECFP4096bit import generate_morgan_fingerprints, main_ecfp
+from Descriptors import descriptors
 
 
 # Define LightGBM hyperparameters
@@ -49,7 +49,7 @@ train_df, test_df = load_data()
 lightgbm_model: lgb.LGBMClassifier = lgb.LGBMClassifier(**params)
 
 # Run evaluation for different methods
-fpdoc2vec_results: Dict[str, Dict[str, float]] = FpDoc2vec(train_df, test_df, model_path, lightgbm_model, categories)
+fpdoc2vec_results: Dict[str, Dict[str, float]] = main_fpdoc2vec(train_df, test_df, model_path, lightgbm_model, categories)
 
 ecfp_results: Dict[str, Dict[str, float]] = ECFP4096bit(train_df, test_df, categories, lightgbm_model)
 
