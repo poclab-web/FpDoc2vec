@@ -1,5 +1,6 @@
-from shap_fpdoc2vec import main_fpdoc2vec, 
-from shap_ecfp import generate_morgan_fingerprints, create_lightgbm_classifier
+from shap_fpdoc2vec import main_fpdoc2vec
+from shap_ecfp import generate_morgan_fingerprints, create_lightgbm_classifier, main_ecfp
+
 # Define model parameters
 # Example params - replace with your actual params
 gbm_params: Dict[str, Any] = {
@@ -29,7 +30,7 @@ purpose="antioxidant"
 output_path = "shap_ecfp_value.pkl"
 target_molecule = "quercetin"
 
-main_ecfp(input_path, purpose="antioxidant", model, output_path)
+main_ecfp(input_path, purpose, model, output_path)
 
 
 # Example usage - replace with your actual file paths
