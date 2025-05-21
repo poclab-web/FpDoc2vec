@@ -41,9 +41,11 @@ categories: List[str] = [
 # Example paths - replace with actual paths
 input_path: str = "10genre_32descriptors.pkl"
 model_path: str = "fpdoc2vec.model"
+train_df_path: str = "train_df.pkl"
+test_df_path: str = "test_df.pkl"
 
 # Load data
-train_df, test_df = load_data()
+train_df, test_df = load_data(train_df_path, test_df_path)
 
 # Create classifier
 lightgbm_model: lgb.LGBMClassifier = lgb.LGBMClassifier(**params)
@@ -51,6 +53,6 @@ lightgbm_model: lgb.LGBMClassifier = lgb.LGBMClassifier(**params)
 # Run evaluation for different methods
 fpdoc2vec_results: Dict[str, Dict[str, float]] = main_fpdoc2vec(train_df, test_df, model_path, lightgbm_model, categories)
 
-ecfp_results: Dict[str, Dict[str, float]] = ECFP4096bit(train_df, test_df, categories, lightgbm_model)
+ecfp_results: Dict[str, Dict[str, float]] = main_ecfp(train_df, test_df, categories, lightgbm_model)
 
 descriptor_results: Dict[str, Dict[str, float]] = descriptors(input_path, train_df, test_df, categories, lightgbm_model)
