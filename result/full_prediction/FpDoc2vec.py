@@ -89,3 +89,33 @@ def make_fp2vector(model_path: str, df: pd.DataFrame) -> np.ndarray:
     compound_vec = add_vectors(finger_list, model)
     vec = np.array(compound_vec)
     return vec
+
+def main(df: pd.DataFrame, X_vec: np.ndarray, params: Dict[str, Any]) -> Dict[str, Dict[str, float]]:
+    """
+    Evaluate chemical categories using the provided feature vectors and classification model
+    
+    Args:
+        df: DataFrame containing chemical compound data with category columns
+        X_vec: Feature vector array for the compounds (from fingerprints, descriptors, or embeddings)
+        params: Parameters dictionary for the LightGBM classifier
+        
+    Returns:
+        Dictionary containing evaluation results for each category
+    """
+    
+    # Define categories to evaluate
+    categories = [
+        'antioxidant', 'anti_inflammatory_agent', 'allergen', 'dye', 'toxin', 
+        'flavouring_agent', 'agrochemical', 'volatile_oil', 'antibacterial_agent', 'insecticide'
+    ]
+    
+    # Create classifier
+    lightgbm_model = lgb.LGBMClassifier(**params)
+    
+    # Evaluate each category
+    results = {}
+    for category in categories:
+        y = np.array([1 if i == category else 0 for i in df[category]])
+        results[category] = evaluate_category(category, X_vec, y, lightgbm_model)
+    
+    return results
