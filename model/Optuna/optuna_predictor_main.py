@@ -15,7 +15,7 @@ from typing import List, Dict, Tuple, Callable, Any, Union, Optional, TypeVar
 from optuna_doc2vec import add_vectors
 import pandas as pd
 from numpy.typing import NDArray
-from optuna_predictor_framework import process_single_category, create_objective_function, ProgressCallback, optimize_model, run_optimization, prepare_data
+from optuna_predictor_framework import process_single_category, create_objective_function, ProgressCallback, optimize_model, run_optimization, prepare_data, create_lightgbm_model, create_lightgbm_params, create_adaboost_model, create_adaboost_params,  create_rf_model, create_rf_params, create_xgboost_model, create_xgboost_params, create_et_model, create_et_params,  
 
 # Note: Please feel free to change the exploration range and parameters as you like.
 
