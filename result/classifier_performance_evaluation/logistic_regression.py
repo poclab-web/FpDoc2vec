@@ -91,8 +91,8 @@ def main(traindf_path: str, testdf_path: str, model_path: str, estimator: Any) -
     train_finger_list = list(train_df["fp_3_4096"])
     test_finger_list = list(test_df["fp_3_4096"])
     
-    train_compound_vec = addvec(train_finger_list, model)
-    test_compound_vec = addvec(test_finger_list, model)
+    train_compound_vec = add_vectors(train_finger_list, model)
+    test_compound_vec = add_vectors(test_finger_list, model)
     
     X_train_vec = np.array([train_compound_vec[i] for i in range(len(train_df))])
     X_test_vec = np.array([test_compound_vec[i] for i in range(len(test_df))])
