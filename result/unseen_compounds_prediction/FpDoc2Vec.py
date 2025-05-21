@@ -82,3 +82,44 @@ def train_and_evaluate_model(
         'train_scores': train_f1,
         'test_scores': test_f1
     }
+
+def FpDoc2vec(
+    train_df: pd.DataFrame, 
+    test_df: pd.DataFrame, 
+    model_path: str, 
+    lightgbm_model: lgb.LGBMClassifier,
+    categories: List[str]
+) -> Dict[str, Dict[str, float]]:
+    """Main function to run the training and evaluation process for the FpDoc2Vec method
+    
+    Args:
+        train_df: Training DataFrame containing molecular data with 'fp_3_4096' column
+        test_df: Test DataFrame containing molecular data with 'fp_3_4096' column
+        model_path: Path to the saved Doc2Vec model
+        lightgbm_model: Configured LightGBM classifier instance
+        categories: List of category names to evaluate
+        
+    Returns:
+        Dictionary mapping categories to their training and test scores
+    """
+    # Generate fingerprint lists
+    train_finger_list = list(train_df["fp_3_4096"])
+    test_finger_list = list(test_df["fp_3_4096"])
+    
+    # Loading Doc2Vec model
+    model = Doc2Vec.load(model_path)
+    
+    # Generate compound vectors
+    train_compound_vec = add_vectors(train_finger_list, model)  
+    test_compound_vec = add_vectors(test_finger_list, model)   
+    X_train_vec = np.array([train_compound_vec[i] for i in range(len(train_df))])
+    X_test_vec = np.array([test_compound_vec[i] for i in range(len(test_df))])
+    
+    # Evaluate each category
+    results = {}
+    for category in categories:
+        results[category] = train_and_evaluate_model(
+            train_df, test_df, X_train_vec, X_test_vec, category, lightgbm_model
+        )
+    
+    return results
