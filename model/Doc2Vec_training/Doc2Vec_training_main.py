@@ -1,8 +1,4 @@
-import pickle
-import numpy as np
-from rdkit.Chem import AllChem
-from gensim.models.doc2vec import Doc2Vec, TaggedDocument
-from Doc2Vec_training_function import generate_morgan_fingerprints, lowercasing, exact_name, train_doc2vec_model
+from Doc2Vec_training_function import generate_morgan_fingerprints, lowercasing, exact_name, train_doc2vec_model, main_doc2vec
 
 
 # Example usage - replace with your actual params
