@@ -3,7 +3,7 @@ import numpy as np
 from gensim.models.doc2vec import Doc2Vec
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import f1_score
-from typing import List
+from typing import List, Dict, Any
 
 def add_vectors(fp_list: List[List[int]], model: Doc2Vec) -> List[np.ndarray]:
     """Combine document vectors based on fingerprints
@@ -31,7 +31,7 @@ def train_and_evaluate_model(
     category: str, 
     estimator
 ) -> Dict[str, float]:
-    """Train and evaluate LightGBM model for a specific category
+    """Train and evaluate model for a specific category
     
     Args:
         train_df: Training dataframe containing category labels
