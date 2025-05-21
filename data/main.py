@@ -1,15 +1,15 @@
 from data_loading import smiles_to_cid, fetch_compound_descriptions, mol_to_inchikey, main_data_loding
-from data_preprocessing import lowercasing, split_sentence, split_word, cleanups, phrasing, phrase
-from make_dataset import add_property_column, generate_morgan_fingerprints
+from data_preprocessing import lowercasing, split_sentence, split_word, cleanups, phrasing, phrase, main_preprocessing
+from make_dataset import add_property_column, generate_morgan_fingerprints, make_dataset
 
 # Example usage - replace with your actual file paths
 sdf_file = "chebi_file.sdf"
 description_filename = "output_description.pkl"
-main_get_description(sdf_file, name_line = "ChEBI Name", mol_file_line = "ROMol", description_filename) 
+main_data_loding(sdf_file, name_line = "ChEBI Name", mol_file_line = "ROMol", description_filename) 
 
 # Example usage - replace with your actual file paths
 processed_filename = "processed_descriptions.pkl"
-preprocess_chemical_descriptions(description_filename, processed_filename)
+main_preprocessing(description_filename, processed_filename)
 
 # Add property columns for multiple chemical roles
 # Note: Replace these file name with your actual name after verification
