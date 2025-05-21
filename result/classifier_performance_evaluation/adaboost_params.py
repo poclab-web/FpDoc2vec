@@ -1,5 +1,6 @@
 from typing import Dict, Any
 
+dt = DecisionTreeClassifier(**dt_params)
 dt_params: Dict[str, Any] = {
     "max_depth": 2, 
     "class_weight": "balanced"
