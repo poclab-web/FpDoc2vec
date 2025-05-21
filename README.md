@@ -130,7 +130,7 @@ import pickle
 import pandas as pd
 import lightgbm as lgb
 from gensim.models.doc2vec import Doc2Vec
-from FpDoc2vec.result.SHAP.shapvalue_to_sturucture_fpdoc2vec import *
+from FpDoc2vec.result.SHAP.shapvalue_to_sturucture import *
 
 with open("your shap file.pkl", "rb") as f:
   shap = pickle.load(f)
@@ -145,7 +145,7 @@ fp_radius = 3 # Set same condition as previous
 nBits = 4096 # Set same condition as previous
 
 # View mapping
-result_svg = visualize_shap_on_mol(
+result_svg = visualize_shap_on_molecule(
         mol=mol, 
         shap_values=shap_values, 
         index=index,
