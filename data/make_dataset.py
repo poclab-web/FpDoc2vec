@@ -68,7 +68,7 @@ def make_dataset(input_file: str, properties: Dict[str, str], output_file: str) 
     # Extract records with duplicate descriptions
     dup_df = df[df.duplicated(subset="description", keep=False)]
     # Convert compound names to lowercase and replace spaces with underscores
-    dup_df["NAME"] = [lowercasing(i[0]).replace(" ", "_") for i in a["compounds"]]
+    dup_df["NAME"] = [lowercasing(i[0]).replace(" ", "_") for i in dup_df["compounds"]]
     # Filter records where the first word of the description matches the compound name
     filtered_df = dup_df[dup_df.apply(lambda x: x['description_split'][0][0] == x['NAME'], axis=1)]
     # Add manually verified records that weren't captured by the automatic filtering
