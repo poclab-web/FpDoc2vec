@@ -6,7 +6,23 @@ Research code for the FpDoc2vec model that predicts chemical roles from database
 
 # Installation
 this repository requires these packages:
-<package list>
+numpy==1.24.4
+pandas==1.5.3
+scikit-learn==1.2.2
+matplotlib==3.6.0
+seaborn==0.13.0
+gensim==4.3.2
+lightgbm==3.3.5
+xgboost==2.1.3
+shap==0.44.1
+umap-learn==0.5.5
+optuna==4.1.0
+optunahub==0.2.0
+rdkit==2022.3.5
+pubchempy==1.0.4
+requests==2.31.0
+beautifulsoup4==4.12.2
+lxml==4.9.3
 
 And this repository is installed by this prompt code
 ```
@@ -22,16 +38,21 @@ first, you should prepare the language dataset, like this format;
 
 Next, you train FpDoc2Vec model and save it. the below is example python code.
 ```
-import ~~
+from Doc2Vec_training_function import generate_morgan_fingerprints, lowercasing, exact_name, train_doc2vec_model
 
 with open("your dataset.pkl", "rb") as f:
-  contents = pickle.load(f)
-with open("your conditions.pkl", "rb") as f:
-  conditions = pickle.load(f)
+  dataset = pickle.load(f)
+with open("your paramaters.pkl", "rb") as f:
+  params = pickle.load(f)
 
-model = "make model function"(contents, conditions=conditions)
+# Generate fingerprints
+dataset["FP"] = generate_morgan_fingerprints(df, 3, 4096) # Change radius and bits as you want
+finger_list = list(dataset["FP"])
 
-model.save("your model name.d2v")
+# Example usage - replace with your actual file paths
+output_model_name = "your model name.d2v"
+model = train_doc2vec_model(dataset, finger_list, params, description_column_name)
+model.save(output_model_name)
 ```
 
 2. Train Activity Dataset
