@@ -1,6 +1,5 @@
 from Doc2Vec_training_function import generate_morgan_fingerprints, lowercasing, exact_name, train_doc2vec_model, main_doc2vec
 
-
 # Example usage - replace with your actual params
 # Please change the parameter values as you like.
 param = {"vector_size": 100, 
