@@ -149,3 +149,40 @@ def phrase(x: List[List[str]], min_count: int, threshold: float) -> List[List[st
     c = Phrases(a[x], min_count=min_count, threshold=threshold)
     d = list(c[a[x]])
     return d
+
+def main_preprocessing(input_file: str, output_filename: str) -> pd.DataFrame:
+    """Load and preprocess chemical compound descriptions
+    
+    Args:
+        input_file: Path to the pickle file containing compound descriptions
+        output_filename: Path where the processed data will be saved
+        
+    Returns:
+        DataFrame containing the processed chemical descriptions
+    """
+    # Load the data
+    with open(input_file, "rb") as f:
+        dict_data = pickle.load(f)
+        all_text_df = pd.DataFrame(dict_data.items(), columns=["compounds", "description"])
+    
+    # Apply preprocessing steps
+    all_text_df["description_lower"] = all_text_df["description"].map(lambda x: lowercasing(x))
+    all_text_df["description_split_sentence"] = all_text_df["description_lower"].map(lambda x: split_sentence(x))
+    all_text_df["description_split"] = all_text_df["description_split_sentence"].map(lambda x: split_word(x))
+    all_text_df["description_remove_stop_words"] = all_text_df["description_split"].map(lambda x: cleanups(x))
+    
+    # Apply phrasing with compound names
+    li = []
+    for i in tqdm(range(len(all_text_df))):
+        li.append(phrasing(all_text_df.iat[i, 5], phrase_list=[all_text_df.iat[i, 0][0]]))
+    all_text_df["description_phrases"] = li
+    all_text_df["description_phrases"] = all_text_df["description_phrases"].map(lambda x: phrase(x, 1, 0.7))
+
+    # Apply gensim phrase detection
+    all_text_df["description_gensim"] = all_text_df["description_remove_stop_words"].map(lambda x: phrase(x, 1, 0.7))
+    
+    # Save the processed data
+    with open(output_filename, "wb") as f:
+        pickle.dump(all_text_df, f)
+    
+    return all_text_df
