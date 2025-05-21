@@ -35,6 +35,7 @@ This model has two steps to prediction.
 
 1. Learn Language Dataset
 first, you should prepare the language dataset, like this format;
+
 | ROMol                          | Description                                       | Objective                                                                               | 
 | ------------------------------ | ------------------------------------------------- | --------------------------------------------------------------------------------------- | 
 | This cells contain MOL object  | This cells describe the compound by string object | This cells contain Your objective variables (such as toxicity or antioxidant activitiy) | 
