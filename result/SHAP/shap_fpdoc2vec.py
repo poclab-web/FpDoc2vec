@@ -188,7 +188,7 @@ def shap_visualize(shap_values: shap.Explanation,
             kwargs = plot_kwg['violin'] or {}
             shap.plots.violin(shap_values, show=show_option, **kwargs)
 
-def main_doc2vec(input_path: str, purpose: str, model_path: str, params: Dict[str, Any], max_evals: int, output_path: str) -> None:
+def main_fpdoc2vec(input_path: str, purpose: str, model_path: str, params: Dict[str, Any], max_evals: int, output_path: str) -> None:
     """
     Main function to run the SHAP analysis pipeline
     
