@@ -83,7 +83,7 @@ def train_and_evaluate_model(
         'test_scores': test_f1
     }
 
-def FpDoc2vec(
+def main_fpdoc2vec(
     train_df: pd.DataFrame, 
     test_df: pd.DataFrame, 
     model_path: str, 
