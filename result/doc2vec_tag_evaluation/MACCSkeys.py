@@ -127,3 +127,53 @@ def evaluate_with_keys(
         'mean_train': np.mean(keys_train_f1_list),
         'mean_test': np.mean(keys_test_f1_list)
     }
+
+def main_maccs(input_file: str, params: Dict[str, Any], lightgbm_model: lgb.LGBMClassifier, 
+               purpose_description: str = "description_remove_stop_words") -> Dict[str, Dict[str, float]]:
+    """
+    Train and evaluate models using MACCS key fingerprints.
+    
+    Args:
+        input_file: Path to the pickle file containing compound data
+        params: Parameters for the Doc2Vec model
+        lightgbm_model: Pre-configured LightGBM classifier
+        purpose_description: Column name in the DataFrame containing text descriptions
+        
+    Returns:
+        Dictionary mapping category names to evaluation results
+    """
+    # Load dataset
+    with open(input_file, "rb") as f:
+        df = pickle.load(f)
+    # Generate MACCS fingerprints
+    maccs_features, invalid_indices = generate_maccs_fingerprints(df)
+    # Create a filtered dataframe with valid MACCS fingerprints
+    df_maccs = df.copy()
+    df_maccs["maccs"] = maccs_features
+    df_maccs = df_maccs.dropna(subset=['maccs'])
+    print(f"Number of compounds with valid MACCS keys: {len(df_maccs)}")
+    
+    # Prepare data for Doc2Vec
+    maccs_list = list(df_maccs["maccs"])
+    corpus = [sum(doc, []) for doc in df_maccs[purpose_description]]
+    
+    # Define categories
+    categories = [
+        'antioxidant', 'anti_inflammatory_agent', 'allergen', 'dye', 'toxin',
+        'flavouring_agent', 'agrochemical', 'volatile_oil', 'antibacterial_agent', 'insecticide'
+    ]
+    
+    # Build Doc2Vec model
+    model = build_doc2vec_model(corpus, maccs_list, params)
+    
+    # Generate compound vectors
+    compound_vec = add_vectors(maccs_list, model)
+    X_vec_maccs = np.array([compound_vec[i] for i in range(len(df_maccs))])
+    
+    # Create index mapping
+    index_mapping = create_index_mapping(len(df), invalid_indices)
+    
+    # Evaluate model performance
+    results = evaluate_with_keys(lightgbm_model, df, df_maccs, X_vec_maccs, categories, index_mapping)
+
+    return results
