@@ -85,3 +85,33 @@ def train_doc2vec_model(df: pd.DataFrame, tag_list: List[List[int]], param: Dict
     model = Doc2Vec(tagged_documents, **param)
     
     return model
+
+def main_doc2vec(input_file: str, output_model_name: str, param: Dict[str, Any], column_list: List[str], purpose_description: str = "description_remove_stop_words") -> None:
+    """
+    Load data, generate molecular fingerprints, train a Doc2Vec model and save it.
+    
+    Args:
+        input_file: Path to a pickle file containing a pandas DataFrame with molecule data
+        output_model_name: File path where the trained Doc2Vec model will be saved
+        param: Dictionary of parameters for the Doc2Vec model initialization
+        list: List of lists where each inner list contains the tags for a document
+        purpose_description: Column name in DataFrame containing preprocessed text for model training (default: "description_remove_stop_words")
+        
+    Returns:
+        None
+    """
+    # Load dataset
+    with open(input_file, "rb") as f:
+        df = pickle.load(f)
+        
+    # Define categories (not used in this code but kept for reference)
+    categories = ['antioxidant', 'anti_inflammatory_agent', 'allergen', 'dye', 'toxin', 
+                 'flavouring_agent', 'agrochemical', 'volatile_oil', 'antibacterial_agent', 'insecticide']
+    
+    # Train Doc2Vec model with the specified text column
+    model = train_doc2vec_model(df, list, param, purpose_description)
+    
+    # Save the model
+    model.save(output_model_name)
+    
+    return None
