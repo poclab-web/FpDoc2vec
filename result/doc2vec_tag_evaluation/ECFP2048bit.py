@@ -118,3 +118,47 @@ def build_doc2vec_model(corpus: List[List[str]],
     model = Doc2Vec(tagged_documents, **doc2vec_param)
     
     return model
+
+def main(input_path: str, feature_list: List[Any], doc2vec_param: Dict[str, Any], 
+         lightgbm_model: lgb.LGBMClassifier, purpose_description: str = "description_remove_stop_words") -> Dict[str, Dict[str, float]]:
+    """
+    Main function to train and evaluate compound classification models using provided features and Doc2Vec.
+    
+    Args:
+        input_path: Path to the pickle file containing compound data
+        feature_list: List of molecular features (like fingerprints) to use in the model
+        doc2vec_param: Parameters for the Doc2Vec model
+        lightgbm_model: Pre-configured LightGBM classifier
+        purpose_description: Column name in the DataFrame containing text descriptions
+        
+    Returns:
+        Dictionary mapping category names to evaluation results
+    """
+    # Load dataset
+    with open(input_path, "rb") as f:
+        df = pickle.load(f)
+        
+    # Define categories to evaluate
+    categories = [
+        'antioxidant', 'anti_inflammatory_agent', 'allergen', 'dye', 'toxin', 
+        'flavouring_agent', 'agrochemical', 'volatile_oil', 'antibacterial_agent', 'insecticide'
+    ]
+    
+    # Prepare corpus for Doc2Vec
+    corpus = [sum(doc, []) for doc in df[purpose_description]]
+    
+    # Build Doc2Vec model
+    model = build_doc2vec_model(corpus, feature_list, doc2vec_param)
+    
+    # Generate compound vectors
+    compound_vec = add_vectors(feature_list, model)
+    X_vec = np.array([compound_vec[i] for i in range(len(df))])
+    
+    
+    # Evaluate each category
+    results = {}
+    for category in categories:
+        y = np.array([1 if i == category else 0 for i in df[category]])
+        results[category] = evaluate_category(category, X_vec, y, lightgbm_model)
+
+    return results
