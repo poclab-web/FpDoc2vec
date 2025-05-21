@@ -1,4 +1,5 @@
 from typing import Dict, Any
+from sklearn.tree import DecisionTreeClassifier
 
 dt = DecisionTreeClassifier(**dt_params)
 dt_params: Dict[str, Any] = {
@@ -7,7 +8,6 @@ dt_params: Dict[str, Any] = {
 }
 
 ada_params: Dict[str, Any] = {
-    "estimator": dt,
     "n_estimators": 442,
     "learning_rate": 0.07760379807069998,
     "algorithm": "SAMME.R",
