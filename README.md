@@ -2,7 +2,8 @@
 Research code for the FpDoc2vec model that predicts chemical roles from database descriptions using NLP. Code used in the paper ['Predicting Chemical Roles from Database Descriptions Using Natural Language Processing'](URL here)
 
 # Summary
-- [Under construction]
+- This model connects two kinds of information, which are linguistic and chemical.
+- Explanatory variables created by this model is more useful than RDKit descriptors and fingerprints.
 
 # Installation
 this repository requires these packages:
@@ -38,7 +39,10 @@ first, you should prepare the language dataset, like this format;
 
 Next, you train FpDoc2Vec model and save it. the below is example python code.
 ```
-from Doc2Vec_training_function import generate_morgan_fingerprints, lowercasing, exact_name, train_doc2vec_model
+import pickle
+import pandas as pd
+from gensim.models.doc2vec import Doc2Vec
+from FpDoc2Vec.model.Do2Vec_training.Doc2Vec_training_function import generate_morgan_fingerprints, lowercasing, exact_name, train_doc2vec_model
 
 with open("your dataset.pkl", "rb") as f:
   dataset = pickle.load(f)
@@ -49,35 +53,48 @@ with open("your paramaters.pkl", "rb") as f:
 dataset["FP"] = generate_morgan_fingerprints(df, 3, 4096) # Change radius and bits as you want
 finger_list = list(dataset["FP"])
 
-# Example usage - replace with your actual file paths
-output_model_name = "your model name.d2v"
-model = train_doc2vec_model(dataset, finger_list, params, description_column_name)
-model.save(output_model_name)
+model = train_doc2vec_model(dataset, finger_list, params, "description_column_name")
+model.save("your model name.d2v")
 ```
 
 2. Train Activity Dataset
-You should prepare the objective activity dataset, which is pairs of the mol onto the activity.
 Next, you train FpDoc2Vec-derivate model, which model is exchanging fingerprints to embeddings of FpDoc2Vec and learning embeddings as input and activities as outputs.
 Example code is shown below;
 ```
-import ~~
+import pickle
+import pandas as pd
+import lightgbm as lgb
+from gensim.models.doc2vec import Doc2Vec
+from FpDoc2vec.result.full_prediction.FpDoc2Vec import add_vectors, evaluate_category, make_fp2vector
 
 fpdoc2vec = model.load("your model name.d2v")
-with open("your activities.pkl", "rb") as f:
+with open("your dataset.pkl", "rb") as f:
   dataset = pickle.load(f)
-with open("your conditions.pkl", "rb") as f:
+with open("your predict conditions.pkl", "rb") as f:
   conditions = pickle.load(f)
 
-model = "predict activity function"(dataset, fpdoc2vec, conditions=conditions)
-model.save("your model name.prd")
+fpvec = make_fp2vector(model_path=fp_model_path, df=df)
+objectives = ['antioxidant', 'anti_inflammatory_agent']  # Change objectives as you want
+lightgbm_model = lgb.LGBMClassifier(**conditions)
+
+results = {}
+    for category in categories:
+        y = np.array([1 if i == category else 0 for i in dataset[category]])
+        results[category] = evaluate_category(category, X_vec, y, lightgbm_model)
+model.save("your perdiction model name.prd")
 "plot function"(model)
 ```
 
 And if you want feature analysis, you can run the SHAP analysis code in result/SHAP directory.
 Example code is shown below;
 ```
-import ~~
+import pickle
+import pandas as pd
+import lightgbm as lgb
+from gensim.models.doc2vec import Doc2Vec
+from FpDoc2vec.result.SHAP.shap_fpdoc2vec import *
 
+# Load Data and models
 prd_model = model.load("your prediction model name.prd")
 fpdoc2vec = model.load("your model name.d2v")
 with open("your activity dataset.pkl", "rb") as f:
@@ -85,22 +102,53 @@ with open("your activity dataset.pkl", "rb") as f:
 with open("your conditions.pkl", "rb") as f:
   conditions = pickle.load(f)
 
-shaps = "make SHAP function"(dataset, prd_model, fpdoc2model, conditions=conditions)
-"plot function"(shap)
+# Define variables (Change as you want)
+purpose = "antioxidant"
+max_evals = 200000
 
+# SHAP preparation
+pipeline, masker = shap_variables(fpdoc2vec.dv.vectors, prd_model)
+y = np.array([1 if i == purpose else 0 for i in dataset[purpose]])
+fingerprint = generate_morgan_fingerprints(dataset, 3, 4096) # Generate by your conditions
+
+# SHAP calcuration
+explainer = shap.Explainer(lambda x: pipeline.predict_proba(x)[:, 1], masker=masker)
+value = explainer(fingerprint, max_evals)
+
+# Save file
 with open("your shap file.pkl", "wb") as f:
-  pickle.dump(shap, f)
+  pickle.dump(value, f)
 ```
 
 We supported calcuration of fingerprints importances. So if you want to look graphical interpretations, you should write mapping codes.
 Our repository has only one example of mapping, which is atom- and bond-based importance mapping.
 ```
-import ~~
+import pickle
+import pandas as pd
+import lightgbm as lgb
+from gensim.models.doc2vec import Doc2Vec
+from FpDoc2vec.result.SHAP.shapvalue_to_sturucture_fpdoc2vec import *
 
 with open("your shap file.pkl", "rb") as f:
   shap = pickle.load(f)
 with open("your activity dataset, "rb") as f:
   dataset = pickle.load(f)
+
+# variables define
+mol = dataset["ROMol]
+index = dataset.index[0]
+scale_factor = 1.0 # Change as you want
+fp_radius = 3 # Set same condition as previous
+nBits = 4096 # Set same condition as previous
+
+result_svg = visualize_shap_on_mol(
+        mol=mol, 
+        shap_values=shap_values, 
+        index=index,
+        scale_factor=scale_factor,
+        fp_radius=fp_radius,
+        nBits=nBits
+    )
 
 "plot function"(shap, dataset)
 ```
