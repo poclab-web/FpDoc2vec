@@ -4,7 +4,9 @@ from typing import Dict, List, Optional, Tuple, Union, Any
 from rdkit.Chem.Pharm2D import Generate, Gobbi_Pharm2D
 from tqdm import tqdm
 import pandas as pd
-
+import lightgbm as lgb
+from ECFP2048bit import add_vectors, build_doc2vec_model
+from MACCSkeys import create_index_mapping, evaluate_with_keys
 
 def process_pharmacophore_features(df: pd.DataFrame) -> Tuple[List[Optional[List[int]]], List[int]]:
     """
