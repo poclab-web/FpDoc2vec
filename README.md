@@ -152,7 +152,7 @@ result_svg = visualize_shap_on_mol(
     )
 ```
 
-# Othe Details
+# Other Details
 If you want other details like performances, please look the paper ['Predicting Chemical Roles from Database Descriptions Using Natural Language Processing'](URL here)
 
 # Data Source
