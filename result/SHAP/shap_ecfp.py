@@ -74,7 +74,7 @@ def calculate_shap_values(model: lgb.LGBMClassifier,
     return explainer.shap_values(features)
 
 
-def main(input_path: str, purpose: str, model: lgb.LGBMClassifier, output_path: str) -> None:
+def main_ecfp(input_path: str, purpose: str, model: lgb.LGBMClassifier, output_path: str) -> None:
     """
     Main function to run the SHAP analysis pipeline
     
