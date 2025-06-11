@@ -27,9 +27,9 @@ requests==2.31.0
 beautifulsoup4==4.12.2
 lxml==4.9.3
 
-And this repository is installed by this prompt code
+And this repository is installed by this prompt code by Anaconda
 ```
-pip install requirements.txt
+conda install requirements.txt
 ```
 
 # Usage
