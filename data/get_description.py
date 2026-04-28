@@ -1,7 +1,7 @@
 import pickle
 import time
 import requests
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Tuple, Union
 import pubchempy as pcp
 from rdkit import Chem
 from rdkit.Chem import PandasTools
@@ -23,7 +23,9 @@ def smiles_to_cid(smiles: str, return_single: bool = True) -> Union[int, List[in
     try:
         compounds = pcp.get_compounds(smiles, "smiles")
         cids = list(map(lambda x: x.cid, compounds))
-    except ValueError as e:
+    except ValueError:
+        return None
+    if not cids:
         return None
     if return_single:
         return cids[0]
@@ -80,15 +82,16 @@ def mol_to_inchikey(mol_list: List) -> List[Union[str, int]]:
             inchikeys.append(0)
     return inchikeys
 
-def main_data_loding(sdf_file: str, name_line: str, mol_file_line: str, file_name: str) -> None:
+def main_data_loading(sdf_file: str, name_line: str, mol_file_line: str, file_name: str, batch_size: int = 25000) -> None:
     """Process SDF file to extract compound information and fetch descriptions from PubChem
-    
+
     Args:
         sdf_file: Path to SDF file containing compound data obtained from ChEBI
         name_line: A column name in a dataframe that stores compound names
         mol_file_line: A column name in a dataframe that stores molfile
         file_name: Path where the output pickle file will be saved
-        
+        batch_size: Number of rows to process per API batch (default: 25000)
+
     Returns:
         None
     """
@@ -120,23 +123,14 @@ def main_data_loding(sdf_file: str, name_line: str, mol_file_line: str, file_nam
             cids.append(None)
     data_df["cid"] = cids
     
-    # Process data in batches
-    # Please change the batch size according to the number of rows.
-    data_df1 = data_df[:25000]
-    data_df2 = data_df[25000:]
-    
-    # Fetch descriptions for first batch
-    all1 = fetch_compound_descriptions(data_df1)
-    
-    # Wait to avoid API rate limiting
-    time.sleep(3600)
-    
-    # Fetch descriptions for second batch
-    all2 = fetch_compound_descriptions(data_df2)
-    
-    # Combine results
-    all1.update(all2)
+    # Process data in batches to avoid API rate limiting
+    all_descriptions = {}
+    batches = [data_df.iloc[i:i + batch_size] for i in range(0, len(data_df), batch_size)]
+    for idx, batch in enumerate(batches):
+        all_descriptions.update(fetch_compound_descriptions(batch))
+        if idx < len(batches) - 1:
+            time.sleep(3600)
     
     # Save data
     with open(file_name, "wb") as f:
-        pickle.dump(all1, f)
+        pickle.dump(all_descriptions, f)

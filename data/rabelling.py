@@ -4,8 +4,8 @@ import pandas as pd
 from typing import Dict, List, Union, Callable, Optional, Any, Tuple
 from rdkit import Chem
 from rdkit.Chem import PandasTools, AllChem
-from data_loading import mol_to_inchikey
-from preprocessing import lowercasing
+from data.get_description import mol_to_inchikey
+from data.preprocessing import lowercasing
 
 
 def add_property_column(df: pd.DataFrame, property_name: str, sdf_path: str) -> pd.DataFrame:
@@ -20,7 +20,7 @@ def add_property_column(df: pd.DataFrame, property_name: str, sdf_path: str) -> 
         DataFrame with the new property column added
     """
     property_df = PandasTools.LoadSDF(sdf_path)
-    property_df["inchikey"] = mol_to_inchikey(property_df)
+    property_df["inchikey"] = mol_to_inchikey(list(property_df["ROMol"]))
     df[property_name] = [property_name if i in list(property_df['inchikey']) else "No" for i in df["inchikey"]]
     return df
 
@@ -66,7 +66,7 @@ def make_dataset(input_file: str, properties: Dict[str, str], output_file: str) 
         df = pickle.load(f)
     
     # Extract records with duplicate descriptions
-    dup_df = df[df.duplicated(subset="description", keep=False)]
+    dup_df = df[df.duplicated(subset="description", keep=False)].copy()
     # Convert compound names to lowercase and replace spaces with underscores
     dup_df["NAME"] = [lowercasing(i[0]).replace(" ", "_") for i in dup_df["compounds"]]
     # Filter records where the first word of the description matches the compound name
@@ -101,8 +101,7 @@ def make_dataset(input_file: str, properties: Dict[str, str], output_file: str) 
     
     # Generate fingerprints
     df["fp_3_4096"] = generate_morgan_fingerprints(df, 3, 4096)
-    finger_list = list(df["fp_3_4096"])
-    
+
     # Save processed dataset
     with open(output_file, "wb") as f:
         pickle.dump(df, f)

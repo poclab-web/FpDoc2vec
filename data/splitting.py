@@ -18,15 +18,8 @@ def split_and_save_dataset(input_filename: str, testfile_name: str, trainfile_na
     with open(input_filename, "rb") as f:
         df = pickle.load(f)
     
-    # Define categories of interest
-    categories = [
-        'antioxidant', 'anti_inflammatory_agent', 'allergen', 'dye', 'toxin', 
-        'flavouring_agent', 'agrochemical', 'volatile_oil', 
-        'antibacterial_agent', 'insecticide'
-    ]
-    
     # Split dataset: 10% for testing, 90% for training
-    df1 = df.sample(frac=0.1)  # Test set
+    df1 = df.sample(frac=0.1, random_state=0)  # Test set
     df2 = df.drop(df1.index)   # Training set
     
     # Reset indices
