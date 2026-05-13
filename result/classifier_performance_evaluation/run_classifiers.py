@@ -17,7 +17,7 @@ from result.classifier_performance_evaluation.evaluation import run_evaluation
 
 warnings.filterwarnings("ignore", message="X does not have valid feature names")
 
-
+# Example usage - replace with your actual file paths
 INPUT_PATH = "train_df.pkl"
 MODEL_PATH = "fpdoc2vec.model"
 RADIUS = 3
@@ -28,7 +28,8 @@ def save(results, name: str) -> None:
     with open(f"{name}_results.pkl", "wb") as f:
         pickle.dump(results, f)
 
-if __name__ == "__main__":
+
+def main():
     # LightGBM
     lightgbm_results = run_evaluation(INPUT_PATH, MODEL_PATH, RADIUS, FP_SIZE, lgb.LGBMClassifier(**gbm_params))
     save(lightgbm_results, "LightGBM")
@@ -53,3 +54,6 @@ if __name__ == "__main__":
     # LogisticRegression
     lr_results = run_evaluation(INPUT_PATH, MODEL_PATH, RADIUS, FP_SIZE, LogisticRegression(**lr_params))
     save(lr_results, "LR")
+
+if __name__ == "__main__":
+    main()

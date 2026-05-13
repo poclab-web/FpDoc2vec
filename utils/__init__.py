@@ -1,21 +1,22 @@
 from .constants import CATEGORIES, METRIC_NAMES
 from .evaluation import (
     calculate_metrics,
-    evaluate_train_test,
-    evaluate_all_categories_train_test,
-    evaluate_all_categories,
-    evaluate_all_categories_filtered,
-    print_metric_summary,
-    print_mcc_summary,
+    _fit_and_score,
+    evaluate_category_cv,
+    main_cv,
+    evaluate_category_traintest,
+    main_traintest,
 )
 from .doc2vec_utils import (
     build_doc2vec_model,
-    load_doc2vec_model,
     fingerprints_to_vectors,
 )
 from .features import (
     generate_ecfp_fingerprints,
-    load_descriptors,
+)
+from .io import (
+    load_pickle,
+    save_pickle,
 )
 
 __all__ = [
@@ -24,17 +25,17 @@ __all__ = [
     "METRIC_NAMES",
     # evaluation
     "calculate_metrics",
-    "evaluate_train_test",
-    "evaluate_all_categories_train_test",
-    "evaluate_all_categories",
-    "evaluate_all_categories_filtered",
-    "print_metric_summary",
-    "print_mcc_summary",
+    "_fit_and_score",
+    "evaluate_category_cv",
+    "main_cv",
+    "evaluate_category_traintest",
+    "main_traintest",
     # doc2vec
     "build_doc2vec_model",
-    "load_doc2vec_model",
     "fingerprints_to_vectors",
     # features
     "generate_ecfp_fingerprints",
-    "load_descriptors",
+    # io
+    "load_pickle",
+    "save_pickle",
 ]

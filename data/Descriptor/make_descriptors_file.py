@@ -116,4 +116,4 @@ if __name__ == "__main__":
     # Example usage - replace with your actual file paths
     input_file = "10genre_dataset.pkl"
     output_file = "10genre_32descriptor.pkl"
-    main(input_file, discrete_columns, output_file)
+    main(input_file, discrete_columns, output_file, corr_threshold=0.95)

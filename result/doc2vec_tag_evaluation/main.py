@@ -30,10 +30,10 @@ warnings.filterwarnings('ignore', message='X does not have valid feature names')
 # Settings
 # ---------------------------------------------------------------------------
 
+
+OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "results")
 DATA_PATH = "../../data/created_dataset/train_df.pkl"
 DESCRIPTION_COL = "description_gensim"
-OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "results")
-
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -50,18 +50,16 @@ def save_results(results: Dict, filename: str) -> None:
         pickle.dump(results, f)
 
 
-def run_ecfp(
-    df: pd.DataFrame,
-    radius: int,
-    n_bits: int,
-    lgbm: lgb.LGBMClassifier,
-    desc_col: str,
-) -> Dict:
-    """Train and evaluate Doc2Vec + LightGBM using ECFP on-bits as document tags."""
-    _, on_bits = generate_ecfp_fingerprints(df, radius, n_bits)
-    model = build_doc2vec_model(df[desc_col].tolist(), on_bits, DOC2VEC_PARAMS)
-    X = fingerprints_to_vectors(on_bits, model)
-    return evaluate_all_categories(X, df, lgbm)
+def run_evaluation(input_path: str, model_path: str, radius: int, fp_size: int, classifier) -> Dict[str, Dict[str, float]]:
+    with open(input_path, "rb") as f:
+        df = pickle.load(f)
+    model = Doc2Vec.load(model_path)
+
+    bit_list = generate_ecfp_fingerprints(df, radius, fp_size)[1]
+    X_vec = np.array(fingerprints_to_vectors(bit_list, model))
+
+    results = main_cv(df, X_vec, classifier)
+    return results
 
 
 def run_with_filter(

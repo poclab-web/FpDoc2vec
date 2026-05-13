@@ -1,11 +1,3 @@
-"""Doc2Vec model training, loading, and fingerprint-to-vector conversion.
-
-Core idea of FpDoc2Vec:
-    Fingerprint on-bit indices are used as *document tags* during Doc2Vec training.
-    After training, each compound is represented as the mean of the document
-    vectors corresponding to its on-bit positions.
-"""
-
 from typing import Any, Dict, List
 import numpy as np
 from gensim.models.doc2vec import Doc2Vec, TaggedDocument
@@ -26,24 +18,11 @@ def build_doc2vec_model(
     Returns:
         Trained Doc2Vec model
     """
-    tagged_docs = [
-        TaggedDocument(words=words, tags=tags)
-        for words, tags in zip(corpus, tag_list)
+    tagged_documents = [
+        TaggedDocument(words=corpus, tags=tag_list[i]) 
+        for i, corpus in enumerate(corpus)
     ]
-    return Doc2Vec(tagged_docs, **params)
-
-
-def load_doc2vec_model(model_path: str) -> Doc2Vec:
-    """Load a pre-trained Doc2Vec model from disk.
-
-    Args:
-        model_path: Path to the saved .model file
-
-    Returns:
-        Loaded Doc2Vec model
-    """
-    return Doc2Vec.load(model_path)
-
+    return Doc2Vec(tagged_documents, **params)
 
 def fingerprints_to_vectors(on_bits_list: List[List[int]], model: Doc2Vec) -> np.ndarray:
     """Create compound vectors by averaging Doc2Vec vectors at each on-bit position.
@@ -64,6 +43,6 @@ def fingerprints_to_vectors(on_bits_list: List[List[int]], model: Doc2Vec) -> np
         if len(bits) == 0:
             vectors.append(np.zeros(model.vector_size))
         else:
-            vec = np.mean([model.dv.vectors[b] for b in bits], axis=0)
+            vec = np.sum([model.dv.vectors[b] for b in bits], axis=0)
             vectors.append(vec)
     return np.array(vectors)
