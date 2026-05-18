@@ -2,22 +2,21 @@
 from typing import List, Tuple
 
 import numpy as np
-import pandas as pd
 from rdkit.Chem import rdFingerprintGenerator
 
 
 def generate_ecfp_fingerprints(
-    df: pd.DataFrame,
+    mols,
     radius: int,
     n_bits: int,
 ) -> Tuple[np.ndarray, List[List[int]]]:
-    """Generate ECFP fingerprints for all molecules in a DataFrame.
+    """Generate ECFP fingerprints for a sequence of RDKit Mol objects.
 
     Uses RDKit's MorganGenerator, which is the recommended API over the
     deprecated GetMorganFingerprintAsBitVect.
 
     Args:
-        df: DataFrame with an 'ROMol' column containing RDKit Mol objects
+        mols: iterable of RDKit Mol objects (e.g. df["ROMol"])
         radius: Morgan fingerprint radius (e.g. 2 or 3)
         n_bits: Fingerprint bit-vector length (e.g. 2048, 4096, 8192)
 
@@ -30,7 +29,7 @@ def generate_ecfp_fingerprints(
     generator = rdFingerprintGenerator.GetMorganGenerator(radius=radius, fpSize=n_bits)
     fp_array = []
     on_bits_list = []
-    for i, mol in enumerate(df["ROMol"]):
+    for i, mol in enumerate(mols):
         try:
             fp = generator.GetFingerprint(mol)
             on_bits_list.append(list(fp.GetOnBits()))

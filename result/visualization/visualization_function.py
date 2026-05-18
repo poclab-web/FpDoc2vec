@@ -1,44 +1,12 @@
-import pickle
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
 import umap
-from typing import Dict, List, Tuple, Any, Union, Optional
-from gensim.models.doc2vec import Doc2Vec
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from typing import List, Dict
+from utils import CATEGORIES
 
-def load_data(file_path: str) -> pd.DataFrame:
-    """Load dataset from pickle file
-    
-    Args:
-        file_path: Path to the pickle file containing the dataset
-        
-    Returns:
-        DataFrame containing the loaded dataset
-    """
-    with open(file_path, "rb") as f:
-        data = pickle.load(f)
-    return data
 
-def add_vectors(fp_list: List[List[int]], model: Doc2Vec) -> List[np.ndarray]:
-    """Combine document vectors based on fingerprints
-    
-    Args:
-        fp_list: List of fingerprint lists, where each fingerprint is represented as a list of indices
-        model: Trained Doc2Vec model containing document vectors
-        
-    Returns:
-        List of compound vectors as numpy arrays
-    """
-    compound_vec = []
-    for i in fp_list:
-        fingerprint_vec = 0
-        for j in i:
-            fingerprint_vec += model.dv.vectors[j]
-        compound_vec.append(fingerprint_vec)
-    return compound_vec
-
-def generate_umap_embedding(vectors: List[np.ndarray], n_components: int = 2, 
-                           n_neighbors: int = 50, min_dist: float = 1) -> np.ndarray:
+def generate_umap_embedding(vectors: List[np.ndarray], n_neighbors: int, min_dist: float, n_components: int = 2) -> np.ndarray:
     """Generate UMAP embedding from input vectors
     
     Args:
@@ -60,9 +28,7 @@ def generate_umap_embedding(vectors: List[np.ndarray], n_components: int = 2,
     return umap_model.fit_transform(vectors)
 
 
-def plot_chemical_categories(df: pd.DataFrame, dim_df: pd.DataFrame, 
-                            categories: List[str], categories_display: List[str], 
-                            output_file: Optional[str] = None) -> None:
+def plot_chemical_categories(df: pd.DataFrame, dim_df: pd.DataFrame, output_file: str) -> None:
     """Create multi-panel plot for different chemical categories
     
     Args:
@@ -78,13 +44,13 @@ def plot_chemical_categories(df: pd.DataFrame, dim_df: pd.DataFrame,
     fig, axes = plt.subplots(2, 5, figsize=(20, 8))
     axes = axes.flatten()
     
-    for idx, category in enumerate(categories):
+    for idx, category in enumerate(CATEGORIES):
         ax = axes[idx]
         
         # Create DataFrame with category labels and coordinates
         names_tb = pd.DataFrame(
-            {"NAME": [i[0] for i in df["compounds"]], 
-             "category": [1 if i == category else 0 for i in df[category]]}
+            { "NAME": [i[0] for i in df["compounds"]],
+             "category": (df[category] == category).astype(int)}
         )
         index_tb = pd.concat([names_tb, dim_df], axis=1)
         
@@ -98,54 +64,18 @@ def plot_chemical_categories(df: pd.DataFrame, dim_df: pd.DataFrame,
         ax.scatter(index_tb[mask_1]["x"], index_tb[mask_1]["y"], 
                   c='red', s=9, alpha=1, label=category)
         
-        ax.set_title(categories_display[idx], fontsize=21, fontweight='bold')
+        ax.set_title(category, fontsize=21, fontweight='bold')
         ax.set_xlabel(None)
         ax.set_ylabel(None)
         # ax.legend(loc='upper left', bbox_to_anchor=(1, 1))
         ax.tick_params(axis='both', which='major', labelsize=8)
     
     plt.tight_layout()
-    
-    # Save figure if output file is specified
-    if output_file:
-        plt.savefig(output_file, dpi=300, bbox_inches='tight')
-    
+    plt.savefig(output_file, dpi=300, bbox_inches='tight')
     plt.show()
-    
-    return None
 
-def make_name2vector(model_path: str, df: pd.DataFrame) -> np.ndarray:
-    """Convert to compound vectors using NameDoc2Vec model
-    
-    Args:
-        model_path: Path to the saved NameDoc2Vec model file
-        df: DataFrame containing compound data
-        
-    Returns:
-        NumPy array of document vectors with shape (len(df), vector_size)
-    """
-    model = Doc2Vec.load(model_path)
-    vec = np.array([model.dv.vectors[i] for i in range(len(df))])
-    return vec
-    
-    
-def make_fp2vector(model_path: str, df: pd.DataFrame) -> np.ndarray:
-    """Convert to compound vectors using FpDoc2Vec model
-    
-    Args:
-        model_path: Path to the saved FpDoc2Vec model file
-        df: DataFrame containing compound data with 'fp_3_4096' column
-        
-    Returns:
-        NumPy array of compound vectors with shape (len(compound_vec), vector_size)
-    """
-    model = Doc2Vec.load(model_path)
-    finger_list = list(df["fp_3_4096"])
-    compound_vec = add_vectors(finger_list, model)
-    vec = np.array(compound_vec)
-    return vec
 
-def main(input_path: str, vec: Dict[str, np.ndarray], output_path: str) -> None:
+def main(df: pd.DataFrame, vec: Dict[str, np.ndarray], output_path: str, n_neighbors: int, min_dist: float) -> None:
     """Process chemical data and generate UMAP visualization of chemical categories
     
     Args:
@@ -156,27 +86,12 @@ def main(input_path: str, vec: Dict[str, np.ndarray], output_path: str) -> None:
     Returns:
         None
     """
-    # Load dataset and model
-    df = load_data(input_path)
     
     # Generate UMAP embedding
-    umap_result = generate_umap_embedding(vec)
+    umap_result = generate_umap_embedding(vec, n_neighbors, min_dist)
     dim_df = pd.DataFrame(umap_result, columns=["x", "y"])
     
-    # Define categories and their display names
-    categories = [
-        'antioxidant', 'anti_inflammatory_agent', 'allergen', 'dye', 'toxin',
-        'flavouring_agent', 'agrochemical', 'volatile_oil', 'antibacterial_agent', 
-        'insecticide'
-    ]
-    
-    display_names = [
-        '"antioxidant"', '"anti-inflammatory agent"', '"allergen"', '"dye"', 
-        '"toxin"', '"flavouring agent"', '"agrochemical"', '"volatile oil"', 
-        '"antibacterial agent"', '"insecticide"'
-    ]
-    
     # Create visualization
-    plot_chemical_categories(df, dim_df, categories, display_names, output_path)
+    plot_chemical_categories(df, dim_df, output_path)
     
     return None

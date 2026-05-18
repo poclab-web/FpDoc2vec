@@ -106,7 +106,7 @@ def phrasing(x: List[List[str]], phrase_list: List[str], connector: str = "_") -
                     continue
                 try:
                     bool_list = [bool(re.search('^' + re.escape(phrase_word), word)) or bool(re.search(re.escape(phrase_word) + '$', word)) 
-                                 for phrase_word, word in zip(list(phrase), sentence[j:j + len(phrase)])]
+                                for phrase_word, word in zip(list(phrase), sentence[j:j + len(phrase)])]
                     if np.prod(bool_list) != 0:
                         if j not in append_list and j + len(phrase) not in append_list:
                             check_list.append((j, j + len(phrase), connector.join(sentence[j:j + len(phrase)])))

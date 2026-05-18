@@ -1,8 +1,13 @@
 import pandas as pd
 import numpy as np
 from numpy.linalg import norm
+from IPython.display import display
+from typing import List
+
 
 from utils import CATEGORIES
+
+# Fp Doc2vec, Name Doc2vec
 
 def get_categories(df: pd.DataFrame, idx: int) -> str:
     
@@ -61,60 +66,20 @@ def similarity_output(df, compound_vec:np.ndarray, target_compound: str, n: int)
 
 
 
+# ECFP
 
-
-
-
-
-
-
-
-
-
-
-def fin2(df, radius, fpSize):
-    fingerprint_objects = []  # この行を追加
-    fp_generator = rdFingerprintGenerator.GetMorganGenerator(radius=radius, fpSize=fpSize)
-    for i, mol in enumerate(df["ROMol"]):
-        try:
-            fp = fp_generator.GetFingerprint(mol)
-            fingerprint_objects.append(fp)  # この行を追加
-
-        except Exception as e:
-            print(f"Error processing molecule {i}: {e}")
-            continue
-    return fingerprint_objects  
-
-def calculate_tanimoto_similarities(df: pd.DataFrame, fingerprint_objects: List, target_compound: str) -> List[float]:
-    try:
-        # ターゲット化合物のインデックスを取得
-        df["NAME"] = [df.iat[i, 0][0] for i in range(len(df))]
-        target_indices = df[df["NAME"] == target_compound].index
-        target_idx = target_indices[0]
-        
-        # ターゲットのフィンガープリント
-        target_fp = fingerprint_objects[target_idx]
-        
-        # BulkTanimotoSimilarityで一括計算
-        similarities = BulkTanimotoSimilarity(target_fp, fingerprint_objects)
-        
-        # 自分自身は0に設定
-        similarities[target_idx] = 0.0
-                
-        return similarities
-        
-    except IndexError:
-        raise ValueError(f"化合物 '{target_compound}' がデータセットに見つかりません")
+def calculate_tanimoto_similarities(df, fingerprint_array: np.ndarray, target_compound_name: str):
+    target_idx = df[df["NAME"] == target_compound_name].index[0]
+    target_fp = fingerprint_array[target_idx]
     
+    dot = fingerprint_array @ target_fp                      
+    similarities = dot / (fingerprint_array.sum(axis=1) + target_fp.sum() - dot)
+    similarities[target_idx] = 0.0
+    return similarities
     
-def tanimoto_similarity_output(input_path: str, fingerprint_objects: List, target_compound: str, n: int = 10) -> None:
-    """谷本類似度の結果を出力"""
-    # Load dataset
-    with open(input_path, "rb") as f:
-        df = pickle.load(f)
+def tanimoto_similarity_output(df: pd.DataFrame, fingerprint_objects: List, target_compound: str, n: int = 10) -> None:
+
     
-    # Add compound names as a separate column
-    df["NAME"] = [df.iat[i, 0][0] for i in range(len(df))]
     df[target_compound] = calculate_tanimoto_similarities(df, fingerprint_objects, target_compound)
     
     # Get top n similar compounds
@@ -128,6 +93,6 @@ def tanimoto_similarity_output(input_path: str, fingerprint_objects: List, targe
     for idx, row in top_similar.iterrows():
         compound_name = row['NAME']
         similarity_score = row[target_compound]
-        categories = get_categories(df, idx)  # 追加: カテゴリー取得
+        categories = get_categories(df, idx)  
         print(f"  {compound_name}: {similarity_score:.4f} (Categories: {categories})")
-        display(df.iat[idx, 10])
+        display(df.at[idx, 'ROMol'])

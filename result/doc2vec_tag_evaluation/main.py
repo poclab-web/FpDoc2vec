@@ -55,7 +55,7 @@ def run_evaluation(input_path: str, model_path: str, radius: int, fp_size: int, 
         df = pickle.load(f)
     model = Doc2Vec.load(model_path)
 
-    bit_list = generate_ecfp_fingerprints(df, radius, fp_size)[1]
+    bit_list = generate_ecfp_fingerprints(df["ROMol"], radius, fp_size)[1]
     X_vec = np.array(fingerprints_to_vectors(bit_list, model))
 
     results = main_cv(df, X_vec, classifier)

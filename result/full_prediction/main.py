@@ -35,7 +35,7 @@ def main():
     save_pickle(name_results, name_results_path)
 
     # ECFP approach
-    ecfp = generate_ecfp_fingerprints(df, radius=3,n_bits=4096)[0]
+    ecfp = generate_ecfp_fingerprints(df["ROMol"], radius=3,n_bits=4096)[0]
     ecfp_results = main_cv(df=df, X_vec=ecfp, classifier=classifier)
     save_pickle(ecfp_results, ecfp_results_path)
 

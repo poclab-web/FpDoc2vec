@@ -15,7 +15,7 @@ from shap_core import calculate_shap_values, shap_variables
 def main_ecfp(df: pd.DataFrame, purpose: str, output_path: str, max_evals: int = None) -> None:
 
     y = (df[purpose] == purpose).astype(int).to_numpy()
-    fingerprints = generate_ecfp_fingerprints(df, radius=3, n_bits=4096)[0]
+    fingerprints = generate_ecfp_fingerprints(df["ROMol"], radius=3, n_bits=4096)[0]
 
     model = lgb.LGBMClassifier(**gbm_params)
     model.fit(fingerprints, y)
@@ -29,7 +29,7 @@ def main_fpdoc2vec(input_path: str, purpose: str, model: Doc2Vec, output_path: s
         df = pickle.load(f)
 
     y = np.array([1 if i == purpose else 0 for i in df[purpose]])
-    fingerprints = generate_ecfp_fingerprints(df, radius=3, n_bits=4096)[0]
+    fingerprints = generate_ecfp_fingerprints(df["ROMol"], radius=3, n_bits=4096)[0]
 
     lightgbm_model = lgb.LGBMClassifier(**gbm_params)
     pipeline, masker = shap_variables(model.dv.vectors, lightgbm_model, mask='xor')

@@ -1,58 +1,47 @@
-import pickle
-import numpy as np
-import pandas as pd
+
+from config import lightgbm_params as params
+from utils import load_data, save_pickle, generate_ecfp_fingerprints, fingerprints_to_vectors, main_traintest
+from gensim.models import Doc2vec
 import lightgbm as lgb
-from typing import Dict, List, Tuple, Any, Optional, Union
-from gensim.models.doc2vec import Doc2Vec
-from sklearn.metrics import f1_score
-from rdkit.Chem import AllChem
-from FpDoc2Vec import add_vectors, load_data, train_and_evaluate_model, main_fpdoc2vec
-from ECFP4096bit import generate_morgan_fingerprints, main_ecfp
-from Descriptors import descriptors
+
+def main():
+    # Example paths - replace with actual paths
+    train_df_path = "data/created_dataset/train_df.pkl"
+    test_df_path = "data/created_dataset/test_df.pkl"
+    train_desc_df = "data/Descriptor/train_desc_df.pkl"
+    test_desc_df = "data/Descriptor/test_desc_df.pkl"
+
+    fp_result_pathname = "fpdoc2vec_results.pkl" 
+    ecfp_result_pathname = "ecfp_results.pkl"
+    descriptor_result_pathname = "descriptors_results.pkl"
+
+    fpmodel_path = "fpdoc2vec.model"
 
 
-# Define LightGBM hyperparameters
-# Please feel free to change parameters as you like.
-params: Dict[str, Any] = {
-    "boosting_type": "dart", 
-    "n_estimators": 444, 
-    "learning_rate": 0.07284380689492893, 
-    "max_depth": 6, 
-    "num_leaves": 41, 
-    "min_child_samples": 21, 
-    "class_weight": "balanced", 
-    "reg_alpha": 1.4922729949843299, 
-    "reg_lambda": 2.8809246344115778, 
-    "colsample_bytree": 0.5789063337359206, 
-    "subsample": 0.5230422589468584, 
-    "subsample_freq": 2, 
-    "drop_rate": 0.1675163179873052, 
-    "skip_drop": 0.49103811434109507, 
-    "objective": 'binary', 
-    "random_state": 50
-}
+    # Load data
+    train_df, test_df = load_data(train_df_path), load_data(test_df_path)
+    train_desc_df, test_desc_df = load_data(train_desc_df), load_data(test_desc_df)
 
-# Define categories to evaluate
-categories: List[str] = [
-    'antioxidant', 'anti_inflammatory_agent', 'allergen', 'dye', 'toxin', 
-    'flavouring_agent', 'agrochemical', 'volatile_oil', 'antibacterial_agent', 'insecticide'
-]
+    train_fp, train_bit_list = generate_ecfp_fingerprints(train_df["ROMol"], radius=3, n_bits=4096)
+    test_fp, test_bit_list = generate_ecfp_fingerprints(test_df["ROMol"], radius=3, n_bits=4096)
 
-# Example paths - replace with actual paths
-input_path: str = "10genre_32descriptors.pkl"
-model_path: str = "fpdoc2vec.model"
-train_df_path: str = "train_df.pkl"
-test_df_path: str = "test_df.pkl"
+    # Create classifier
+    lightgbm_model: lgb.LGBMClassifier = lgb.LGBMClassifier(**params)
 
-# Load data
-train_df, test_df = load_data(train_df_path, test_df_path)
+    # Fp Doc2vec
+    fp_model = Doc2vec.load(fpmodel_path)
+    X_train_vec, X_test_vec = fingerprints_to_vectors(train_bit_list, fp_model), fingerprints_to_vectors(test_bit_list, fp_model)
+    fpdoc2vec_results = main_traintest(train_df, test_df, X_train_vec, X_test_vec, lightgbm_model)
+    save_pickle(fpdoc2vec_results, fp_result_pathname)
 
-# Create classifier
-lightgbm_model: lgb.LGBMClassifier = lgb.LGBMClassifier(**params)
+    # ECFP
+    ecfp_results = main_traintest(train_df, test_df, train_fp, test_fp, lightgbm_model)
+    save_pickle(ecfp_results, ecfp_result_pathname)
 
-# Run evaluation for different methods
-fpdoc2vec_results: Dict[str, Dict[str, float]] = main_fpdoc2vec(train_df, test_df, model_path, lightgbm_model, categories)
+    # Descriptiors
+    X_train_desc, X_test_desc = make_descriptor(train_desc_df), make_descriptor(test_desc_df)
+    descriptor_results = main_traintest(train_df, test_df, X_train_desc, X_test_desc, lightgbm_model)
+    save_pickle(descriptor_results, descriptor_result_pathname)
 
-ecfp_results: Dict[str, Dict[str, float]] = main_ecfp(train_df, test_df, categories, lightgbm_model)
-
-descriptor_results: Dict[str, Dict[str, float]] = descriptors(input_path, train_df, test_df, categories, lightgbm_model)
+if __name__ == "__main__":
+    main()
