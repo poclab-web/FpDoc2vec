@@ -44,66 +44,57 @@ first, you should prepare the language dataset, like this format;
 
 Next, you train FpDoc2Vec model and save it. the below is example python code.
 ```
-import pickle
 import pandas as pd
 from gensim.models.doc2vec import Doc2Vec
-from FpDoc2Vec.model.Do2Vec_training.Doc2Vec_training_function import generate_morgan_fingerprints, lowercasing, exact_name, train_doc2vec_model
+from utils import load_pickle, generate_ecfp_fingerprints, build_tagged_corpus
+from config import doc2vec_params as DOC2VEC_PARAMS
 
-with open("your dataset.pkl", "rb") as f:
-  dataset = pickle.load(f)
-with open("your paramaters.pkl", "rb") as f:
-  params = pickle.load(f)
+dataset = load_pickle("your dataset.pkl")
 
 # Generate fingerprints
-dataset["FP"] = generate_morgan_fingerprints(df, 3, 4096) # Change radius and bits as you want
-finger_list = list(dataset["FP"])
+_, bit_list = generate_ecfp_fingerprints(list(dataset["ROMol"]), radius=3, n_bits=4096)  # Change radius and bits as you want
+corpus = build_tagged_corpus(dataset, bit_list, "description_column_name")
 
-model = train_doc2vec_model(dataset, finger_list, params, "description_column_name")
-model.save("your model name.d2v")
+model = Doc2Vec(corpus, **DOC2VEC_PARAMS)
+model.save("your model name.model")
 ```
 
 2. Train Activity Dataset
 Next, you train FpDoc2Vec-derivate model, which model is exchanging fingerprints to embeddings of FpDoc2Vec and learning embeddings as input and activities as outputs.
 Example code is shown below;
 ```
-import pickle
-import pandas as pd
 import lightgbm as lgb
 from gensim.models.doc2vec import Doc2Vec
-from FpDoc2vec.result.full_prediction.FpDoc2Vec import add_vectors, evaluate_category, make_fp2vector
+from utils import load_pickle, generate_ecfp_fingerprints, fingerprints_to_vectors, main_cv
 
-fpdoc2vec = model.load("your model name.d2v")
-with open("your dataset.pkl", "rb") as f:
-  dataset = pickle.load(f)
+dataset = load_pickle("your dataset.pkl")
+fp_model = Doc2Vec.load("your model name.model")
+
 with open("your predict conditions.pkl", "rb") as f:
   conditions = pickle.load(f)
+classifier = lgb.LGBMClassifier(**conditions)
 
-fpvec = make_fp2vector(model_path=fp_model_path, df=df)
-objectives = ['antioxidant', 'anti_inflammatory_agent']  # Change objectives as you want
-lightgbm_model = lgb.LGBMClassifier(**conditions)
+_, bit_list = generate_ecfp_fingerprints(list(dataset["ROMol"]), radius=3, n_bits=4096)
+fpvec = fingerprints_to_vectors(bit_list, fp_model)
 
-results = {}
-    for category in categories:
-        y = np.array([1 if i == category else 0 for i in dataset[category]])
-        results[category] = evaluate_category(category, X_vec, y, lightgbm_model)
-model.save("your perdiction model name.prd")
-"plot function"(model)
+results = main_cv(df=dataset, X_vec=fpvec, classifier=classifier)
 ```
 
 And if you want feature analysis, you can run the SHAP analysis code in result/SHAP directory.
 Example code is shown below;
 ```
 import pickle
-import pandas as pd
+import numpy as np
+import shap
 import lightgbm as lgb
-from gensim.models.doc2vec import Doc2Vec
-from FpDoc2vec.result.SHAP.shap_fpdoc2vec import *
+from gensim.models import Doc2Vec
+from utils import load_pickle, save_pickle, generate_ecfp_fingerprints
+from result.SHAP.calculate_core import shap_variables
 
 # Load Data and models
-prd_model = model.load("your prediction model name.prd")
-fpdoc2vec = model.load("your model name.d2v")
-with open("your activity dataset.pkl", "rb") as f:
-  dataset = pickle.load(f)
+dataset = load_pickle("your activity dataset.pkl")
+doc2vec_model = Doc2Vec.load("your model name.model")
+
 with open("your conditions.pkl", "rb") as f:
   conditions = pickle.load(f)
 
@@ -112,49 +103,39 @@ purpose = "antioxidant"
 max_evals = 200000
 
 # SHAP preparation
-pipeline, masker = shap_variables(fpdoc2vec.dv.vectors, prd_model)
-y = np.array([1 if i == purpose else 0 for i in dataset[purpose]])
-fingerprint = generate_morgan_fingerprints(dataset, 3, 4096) # Generate by your conditions
+fingerprints, _ = generate_ecfp_fingerprints(list(dataset["ROMol"]), radius=3, n_bits=4096)
+y = (dataset[purpose] == purpose).astype(int).to_numpy()
+lightgbm_model = lgb.LGBMClassifier(**conditions)
+pipeline, masker = shap_variables(doc2vec_model.dv.vectors, lightgbm_model, mask='xor')
+pipeline.fit(fingerprints, y)
 
-# SHAP calcuration
+# SHAP calculation
 explainer = shap.Explainer(lambda x: pipeline.predict_proba(x)[:, 1], masker=masker)
-value = explainer(fingerprint, max_evals)
+value = explainer(fingerprints, max_evals)
 
-# Save file
-with open("your shap file.pkl", "wb") as f:
-  pickle.dump(value, f)
+save_pickle(value, "your shap file.pkl")
 ```
 
 We supported calcuration of fingerprints importances. So if you want to look graphical interpretations, you should write mapping codes.
 Our repository has only one example of mapping, which is atom- and bond-based importance mapping.
 ```
-import pickle
-import pandas as pd
-import lightgbm as lgb
-from gensim.models.doc2vec import Doc2Vec
-from FpDoc2vec.result.SHAP.shapvalue_to_sturucture import *
+from utils import load_pickle
+from result.SHAP.value_to_structure_core import visualize_shap_on_molecule
 
-with open("your shap file.pkl", "rb") as f:
-  shap = pickle.load(f)
-with open("your activity dataset, "rb") as f:
-  dataset = pickle.load(f)
+shap_values = load_pickle("your shap file.pkl")
+dataset = load_pickle("your activity dataset.pkl")
 
-# variables define
-mol = dataset["ROMol"]
-index = dataset.index[0]
-scale_factor = 1.0 # Change as you want
-fp_radius = 3 # Set same condition as previous
-nBits = 4096 # Set same condition as previous
-
-# View mapping
+# View mapping (Change arguments as you want)
 result_svg = visualize_shap_on_molecule(
-        mol=mol, 
-        shap_values=shap_values, 
-        index=index,
-        scale_factor=scale_factor,
-        fp_radius=fp_radius,
-        nBits=nBits
-    )
+    compound_name="your compound name",
+    df=dataset,
+    shap_values=shap_values,
+    radius=3,
+    nBits=4096,
+    compound_column="NAME",
+    mol_column="ROMol",
+    output="output.svg"
+)
 ```
 
 # Other Details
