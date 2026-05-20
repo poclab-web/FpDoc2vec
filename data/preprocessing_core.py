@@ -110,7 +110,7 @@ def main_preprocessing(df: pd.DataFrame) -> pd.DataFrame:
 
     li = []
     for i in tqdm(range(len(df))):
-        li.append(phrasing(df.at[i, "description_remove_stop_words"], phrase_list=[df.at[i, "name"]]))
+        li.append(phrasing(df.at[i, "description_remove_stop_words"], phrase_list=[df.at[i, "NAME"]]))
     df["description_phrases"] = li
     df["description_phrases"] = df["description_phrases"].map(lambda x: phrase(x, 1, 0.7))
 

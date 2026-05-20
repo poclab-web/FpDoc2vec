@@ -1,6 +1,6 @@
 from gensim.models import Doc2Vec
 from utils import load_pickle, save_pickle, generate_ecfp_fingerprints, fingerprints_to_vectors, make_name2vector, make_descriptor
-from matrix_core import export_upper_triangle_matrix, compare_matrices
+from result.similarity.similarity_matrix.matrix_core import export_upper_triangle_matrix, compare_matrices
 from sklearn.metrics.pairwise import cosine_similarity
 
 

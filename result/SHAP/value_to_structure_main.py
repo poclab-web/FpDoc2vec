@@ -1,4 +1,4 @@
-from result.SHAP.shapvalue_to_structure_core import visualize_shap_on_molecule
+from result.SHAP.value_to_structure_core import visualize_shap_on_molecule
 from utils import load_pickle
 
 def main() -> None:
@@ -14,9 +14,9 @@ def main() -> None:
         compound_name = target_molecule_name, 
         df = df, 
         shap_values = value, 
-        fp_radius = 3, 
-        nBits = 4096, 
-        compound_name_column = 'NAME',
+        radius = 3,
+        nBits = 4096,
+        compound_column = 'NAME',
         mol_column = 'ROMol',
         output = "quercetin_fp_doc2vec_shap.svg",
         size = (300, 300))

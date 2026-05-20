@@ -31,7 +31,7 @@ def process_single_fold(args: tuple[str, pd.DataFrame, dict[str, Any], np.ndarra
 
     y = (train_df[category] == category).astype(int).to_numpy()
 
-    finger_list = generate_ecfp_fingerprints(list(train_df["ROMol"]), radius=3, nBits=4096)[1]
+    finger_list = generate_ecfp_fingerprints(list(train_df["ROMol"]), radius=3, n_bits=4096)[1]
 
     fold_train_df = train_df.iloc[train_idx]
     fold_finger_list = generate_ecfp_fingerprints(list(fold_train_df["ROMol"]), radius=3, n_bits=4096)[1]

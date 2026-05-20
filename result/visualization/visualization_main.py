@@ -1,4 +1,4 @@
-from visualization_function import run_visualization
+from result.visualization.visualization_function import run_visualization
 from utils import load_data, generate_ecfp_fingerprints, make_descriptor, make_name2vector, fingerprints_to_vectors
 from gensim.models import Doc2Vec
 
@@ -20,19 +20,19 @@ def main():
     # FP Doc2Vec
     fp_model = Doc2Vec.load(fp_model_path)
     fp_vec = fingerprints_to_vectors(bit_list, fp_model)
-    run_visualization(df, fp_vec, fpdoc_output_path)
+    run_visualization(df, fp_vec, fpdoc_output_path, n_neighbors=15, min_dist=0.1)
 
     # NameDoc2vec
     name_model = Doc2Vec.load(name_model_path)
     name_vec = make_name2vector(name_model, df)
-    run_visualization(df, name_vec, namedoc_output_path)
+    run_visualization(df, name_vec, namedoc_output_path, n_neighbors=15, min_dist=0.1)
 
     # ECFP
-    run_visualization(df, fp, ecfp_output_path)
+    run_visualization(df, fp, ecfp_output_path, n_neighbors=15, min_dist=0.1)
 
     # Descriptors
-    desc = make_descriptor(df)    
-    run_visualization(df, desc, desc_output_path)
+    desc = make_descriptor(df)
+    run_visualization(df, desc, desc_output_path, n_neighbors=15, min_dist=0.1)
 
 if __name__=="__main__":
     main()

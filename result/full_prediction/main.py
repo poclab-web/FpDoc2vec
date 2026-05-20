@@ -1,5 +1,4 @@
 from gensim.models.doc2vec import Doc2Vec
-from Descriptors import make_descriptor
 from config import gbm_params as params
 import lightgbm as lgb
 from utils import load_data, save_pickle, generate_ecfp_fingerprints, main_cv, fingerprints_to_vectors, make_name2vector, make_descriptor

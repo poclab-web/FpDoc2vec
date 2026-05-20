@@ -28,7 +28,7 @@ def plot_chemical_categories(df: pd.DataFrame, dim_df: pd.DataFrame, output_file
         
         # Create DataFrame with category labels and coordinates
         names_tb = pd.DataFrame(
-            { "NAME": [i[0] for i in df["compounds"]], "category": (df[category] == category).astype(int)}
+            { "NAME": df["NAME"].tolist(), "category": (df[category] == category).astype(int)}
         )
         index_tb = pd.concat([names_tb, dim_df], axis=1)
         

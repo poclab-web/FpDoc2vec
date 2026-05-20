@@ -6,7 +6,7 @@ from gensim.models import Doc2Vec
 
 from config.lightgbm_params import gbm_params
 from utils import generate_ecfp_fingerprints, save_pickle, load_pickle
-from shap_core import calculate_shap_values, shap_variables
+from result.SHAP.calculate_core import calculate_shap_values, shap_variables
 
 
 def main_ecfp(fingerprints: np.ndarray, y: np.ndarray, output_path: str, max_evals: int = None) -> None:

@@ -4,8 +4,9 @@ from typing import Tuple
 
 def split_dataset(df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """Split dataset into 90% train and 10% test sets."""
-    test_df = df.sample(frac=0.1, random_state=0).reset_index(drop=True)
+    test_df = df.sample(frac=0.1, random_state=0)
     train_df = df.drop(test_df.index).reset_index(drop=True)
+    test_df = test_df.reset_index(drop=True)
     return train_df, test_df
 
 

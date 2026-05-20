@@ -1,4 +1,4 @@
-from similarity_core import similarity_output, tanimoto_similarity_output
+from result.similarity.similarity_core import similarity_output, tanimoto_similarity_output
 from utils import load_pickle, generate_ecfp_fingerprints, fingerprints_to_vectors, make_name2vector
 from gensim.models.doc2vec import Doc2Vec
 

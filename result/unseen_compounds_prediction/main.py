@@ -1,7 +1,7 @@
 
 from config import lightgbm_params as params
 from utils import load_data, save_pickle, generate_ecfp_fingerprints, fingerprints_to_vectors, main_traintest, make_descriptor
-from gensim.models import Doc2vec
+from gensim.models import Doc2Vec
 import lightgbm as lgb
 
 def main() :
@@ -27,7 +27,7 @@ def main() :
     lightgbm_model: lgb.LGBMClassifier = lgb.LGBMClassifier(**params)
 
     # Fp Doc2vec
-    fp_model = Doc2vec.load(fpmodel_path)
+    fp_model = Doc2Vec.load(fpmodel_path)
     X_train_vec, X_test_vec = fingerprints_to_vectors(train_bit_list, fp_model), fingerprints_to_vectors(test_bit_list, fp_model)
     fpdoc2vec_results = main_traintest(train_df, test_df, X_train_vec, X_test_vec, lightgbm_model)
     save_pickle(fpdoc2vec_results, fp_result_pathname)

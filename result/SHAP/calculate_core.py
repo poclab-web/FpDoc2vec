@@ -28,7 +28,7 @@ class _XOR_Tabular(shap.maskers.Independent):
         """Apply XOR-based masking to generate masked input data for SHAP explanation."""
         mask = self._standardize_mask(mask, x)
         if np.issubdtype(mask.dtype, np.integer):
-            super().__call__(mask, x)
+            return super().__call__(mask, x)
         else:
             self._masked_data[:] = 1 - np.logical_xor(mask, x).reshape(1, len(x))
             self._last_mask[:] = mask
@@ -84,10 +84,10 @@ def shap_visualize(shap_values: shap.Explanation, show_option: bool = False, *,
     os.chdir(file_path)
     for kind in kinds:
         if kind == 'bar':
-            shap.plots.bar(shap_values, show=show_option, **plot_kwg['bar'])
+            shap.plots.bar(shap_values, show=show_option, **(plot_kwg['bar'] or {}))
         if kind == 'heatmap':
-            shap.plots.heatmap(shap_values, show=show_option, **plot_kwg['heatmap'])
+            shap.plots.heatmap(shap_values, show=show_option, **(plot_kwg['heatmap'] or {}))
         if kind == 'beeswarm':
-            shap.plots.beeswarm(shap_values, show=show_option, **plot_kwg['beeswarm'])
+            shap.plots.beeswarm(shap_values, show=show_option, **(plot_kwg['beeswarm'] or {}))
         if kind == 'violin':
-            shap.plots.violin(shap_values, show=show_option, **plot_kwg['violin'])
+            shap.plots.violin(shap_values, show=show_option, **(plot_kwg['violin'] or {}))

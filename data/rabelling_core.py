@@ -16,7 +16,7 @@ def add_property_column(df: pd.DataFrame, property_name: str, sdf_path: str) -> 
 def main_rabelling(df: pd.DataFrame, properties: Dict[str, str]) -> pd.DataFrame:
     """Add property columns and filter to compounds with at least one property."""
     dup_df = df[df.duplicated(subset="description", keep=False)].copy()
-    dup_df["name"] = [lowercasing(i).replace(" ", "_") for i in dup_df["name"]]
+    dup_df["name"] = [lowercasing(i).replace(" ", "_") for i in dup_df["NAME"]]
     filtered_df = dup_df[dup_df.apply(lambda x: x['description_split'][0][0] == x['name'], axis=1)]
     # Manually verified records — replace indices after verification
     supple_df = dup_df.loc[[3829, 40666, 11662, 8371, 4430, 25339]]

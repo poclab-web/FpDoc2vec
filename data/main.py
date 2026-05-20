@@ -1,8 +1,8 @@
-from get_description_core import load_sdf, fetch_descriptions
-from preprocessing_core import main_preprocessing
-from rabelling_core import main_rabelling
-from calc_descriptors_core import main_calculate_descriptors
-from splitting_core import split_dataset, split_descriptors_dataset
+from data.get_description_core import load_sdf, fetch_descriptions
+from data.preprocessing_core import main_preprocessing
+from data.rabelling_core import main_rabelling
+from data.calc_descriptors_core import main_calculate_descriptors
+from data.splitting_core import split_dataset, split_descriptors_dataset
 from utils import save_pickle
 
 def main():
