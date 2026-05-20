@@ -1,196 +1,95 @@
-import os
-import pickle
-import sys
-import warnings
-from typing import Dict, List, Optional, Tuple
-
-import lightgbm as lgb
 import numpy as np
-import pandas as pd
-from rdkit.Chem import MACCSkeys, Generate
-from rdkit.Chem.Pharm2D import Gobbi_Pharm2D
-from sklearn.feature_extraction.text import CountVectorizer
-from tqdm import tqdm
+import lightgbm as lgb
+from gensim.models import Doc2Vec
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), "../.."))
-
+from config.lightgbm_params import gbm_params as LIGHTGBM_PARAMS
 from config.doc2vec_params import doc2vec_param as DOC2VEC_PARAMS
-from util import (
-    build_doc2vec_model,
-    fingerprints_to_vectors,
+from utils import (
+    build_tagged_corpus,
     generate_ecfp_fingerprints,
-    evaluate_all_categories,
-    evaluate_all_categories_filtered,
-    print_mcc_summary,
+    fingerprints_to_vectors,
+    load_pickle,
+    save_pickle,
+    main_cv,
+)
+from result.doc2vec_tag_evaluation.core import (
+    run_ecfp,
+    run_with_filter,
+    generate_maccs_on_bits,
+    generate_pharmacophore_on_bits,
+    generate_ngram_indices,
 )
 
-warnings.filterwarnings('ignore', message='X does not have valid feature names')
+def main():
 
-# ---------------------------------------------------------------------------
-# Settings
-# ---------------------------------------------------------------------------
+    DATA_PATH = "data/created_dataset/train_df.pkl"
+    DESCRIPTION_COL = "description_gensim"
 
+    ecfp_2048_model_path = "results/doc2vec_tag_evaluation/model_ecfp2048.pkl"
+    ecfp_4096_model_path = "results/doc2vec_tag_evaluation/model_ecfp4096.pkl"
+    maccs_model_path = "results/doc2vec_tag_evaluation/model_maccs.pkl"
+    pharmacophore_model_path = "results/doc2vec_tag_evaluation/model_pharmacophore.pkl"
+    ngram_model_path = "results/doc2vec_tag_evaluation/model_ngram.pkl"
 
-OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "results")
-DATA_PATH = "../../data/created_dataset/train_df.pkl"
-DESCRIPTION_COL = "description_gensim"
+    ecfp_2048results_path = "results/doc2vec_tag_evaluation/ecfp2048.pkl"
+    ecfp_4096results_path = "results/doc2vec_tag_evaluation/ecfp4096.pkl"
+    maccs_result_path = "results/doc2vec_tag_evaluation/maccs.pkl"
+    pharmacophore_result_path = "results/doc2vec_tag_evaluation/pharmacophore.pkl"
+    ngram_result_path = "results/doc2vec_tag_evaluation/smiles_ngram.pkl"
 
-# ---------------------------------------------------------------------------
-# Helpers
-# ---------------------------------------------------------------------------
+    df = load_pickle(DATA_PATH)
+    lgbm = lgb.LGBMClassifier(**LIGHTGBM_PARAMS)
 
-def load_data(path: str) -> pd.DataFrame:
-    with open(path, "rb") as f:
-        return pickle.load(f)
+    # ECFP (radius=2, 2048 bits)
+    _, on_bits_ecfp2048 = generate_ecfp_fingerprints(list(df["ROMol"]), radius=2, n_bits=2048)
+    corpus_ecfp2048 = build_tagged_corpus(df, on_bits_ecfp2048, DESCRIPTION_COL)
+    model_ecfp2048 = Doc2Vec(corpus_ecfp2048, **DOC2VEC_PARAMS)
+    model_ecfp2048.save(ecfp_2048_model_path)
+    results_ecfp2048 = run_ecfp(df, on_bits_ecfp2048, lgbm, model_ecfp2048)
+    save_pickle(results_ecfp2048, ecfp_2048results_path)
 
+    # ECFP (radius=3, 4096 bits)
+    _, on_bits_ecfp4096 = generate_ecfp_fingerprints(list(df["ROMol"]), radius=3, n_bits=4096)
+    corpus_ecfp4096 = build_tagged_corpus(df, on_bits_ecfp4096, DESCRIPTION_COL)
+    model_ecfp4096 = Doc2Vec(corpus_ecfp4096, **DOC2VEC_PARAMS)
+    model_ecfp4096.save(ecfp_4096_model_path)
+    results_ecfp4096 = run_ecfp(df, on_bits_ecfp4096, lgbm, model_ecfp4096)
+    save_pickle(results_ecfp4096, ecfp_4096results_path)
 
-def save_results(results: Dict, filename: str) -> None:
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    with open(os.path.join(OUTPUT_DIR, filename), "wb") as f:
-        pickle.dump(results, f)
+    # MACCS keys
+    on_bits_maccs, invalid_maccs = generate_maccs_on_bits(df)
+    valid_mask_maccs = np.array([b is not None for b in on_bits_maccs])
+    corpus_maccs = build_tagged_corpus(
+        df[valid_mask_maccs].reset_index(drop=True),
+        [b for b in on_bits_maccs if b is not None],
+        DESCRIPTION_COL,
+    )
+    model_maccs = Doc2Vec(corpus_maccs, **DOC2VEC_PARAMS)
+    model_maccs.save(maccs_model_path)
+    results_maccs = run_with_filter(df, on_bits_maccs, invalid_maccs, lgbm, model_maccs)
+    save_pickle(results_maccs, maccs_result_path)
 
+    # 2D pharmacophore (Gobbi)
+    on_bits_pharm, invalid_pharm = generate_pharmacophore_on_bits(df)
+    valid_mask_pharm = np.array([b is not None for b in on_bits_pharm])
+    corpus_pharm = build_tagged_corpus(
+        df[valid_mask_pharm].reset_index(drop=True),
+        [b for b in on_bits_pharm if b is not None],
+        DESCRIPTION_COL,
+    )
+    model_pharm = Doc2Vec(corpus_pharm, **DOC2VEC_PARAMS)
+    model_pharm.save(pharmacophore_model_path)
+    results_pharm = run_with_filter(df, on_bits_pharm, invalid_pharm, lgbm, model_pharm)
+    save_pickle(results_pharm, pharmacophore_result_path)
 
-def run_evaluation(input_path: str, model_path: str, radius: int, fp_size: int, classifier) -> Dict[str, Dict[str, float]]:
-    with open(input_path, "rb") as f:
-        df = pickle.load(f)
-    model = Doc2Vec.load(model_path)
+    # SMILES character 3-grams
+    ngram_indices = generate_ngram_indices(df, smiles_col="smiles", n=3)
+    corpus_ngram = build_tagged_corpus(df, ngram_indices, DESCRIPTION_COL)
+    model_ngram = Doc2Vec(corpus_ngram, **DOC2VEC_PARAMS)
+    model_ngram.save(ngram_model_path)
+    X_ngram = fingerprints_to_vectors(ngram_indices, model_ngram)
+    results_ngram = main_cv(df, X_ngram, lgbm)
+    save_pickle(results_ngram, ngram_result_path)
 
-    bit_list = generate_ecfp_fingerprints(df["ROMol"], radius, fp_size)[1]
-    X_vec = np.array(fingerprints_to_vectors(bit_list, model))
-
-    results = main_cv(df, X_vec, classifier)
-    return results
-
-
-def run_with_filter(
-    df: pd.DataFrame,
-    on_bits_list: List[Optional[List[int]]],
-    invalid_indices: List[int],
-    lgbm: lgb.LGBMClassifier,
-    desc_col: str,
-) -> Dict:
-    """Train and evaluate when some molecules have invalid fingerprints.
-
-    The filtered subset is used for Doc2Vec training and vectorization.
-    Cross-validation splits are derived from the full dataset for consistency.
-    """
-    valid_mask = np.array([b is not None for b in on_bits_list])
-    df_filtered = df[valid_mask].reset_index(drop=True)
-    valid_on_bits = [b for b in on_bits_list if b is not None]
-    print(f"Compounds with valid fingerprints: {len(df_filtered)} / {len(df)}")
-
-    model = build_doc2vec_model(df_filtered[desc_col].tolist(), valid_on_bits, DOC2VEC_PARAMS)
-    X = fingerprints_to_vectors(valid_on_bits, model)
-
-    index_mapping = create_index_mapping(len(df), invalid_indices)
-    return evaluate_all_categories_filtered(X, df, df_filtered, lgbm, index_mapping)
-
-def generate_maccs_on_bits(
-    df: pd.DataFrame,
-) -> Tuple[List[Optional[List[int]]], List[int]]:
-    """Generate MACCS key fingerprints as on-bit index lists for use as Doc2Vec tags.
-
-    Args:
-        df: DataFrame with RDKit Mol objects in the 'ROMol' column
-
-    Returns:
-        Tuple of:
-          - on_bits_list: on-bit index lists per molecule (None for invalid molecules)
-          - invalid_indices: indices of molecules with no bits set
-    """
-    on_bits_list = []
-    invalid_indices = []
-
-    for idx, mol in enumerate(df["ROMol"]):
-        fp = MACCSkeys.GenMACCSKeys(mol)
-        bits = list(fp.GetOnBits())
-        if len(bits) == 0:
-            print(f"No MACCS bits for molecule at index {idx}")
-            on_bits_list.append(None)
-            invalid_indices.append(idx)
-        else:
-            on_bits_list.append(bits)
-
-    return on_bits_list, invalid_indices
-
-
-def generate_pharmacophore_on_bits(
-    df: pd.DataFrame,
-) -> Tuple[List[Optional[List[int]]], List[int]]:
-    """Generate 2D pharmacophore (Gobbi) fingerprints as on-bit index lists for use as Doc2Vec tags.
-
-    Args:
-        df: DataFrame with RDKit Mol objects in the 'ROMol' column
-
-    Returns:
-        Tuple of:
-          - on_bits_list: on-bit index lists per molecule (None for invalid molecules)
-          - invalid_indices: indices of molecules where generation failed or no bits are set
-    """
-    on_bits_list = []
-    invalid_indices = []
-
-    for idx, mol in enumerate(tqdm(df["ROMol"], desc="Generating pharmacophore fingerprints")):
-        try:
-            fp = Generate.Gen2DFingerprint(mol, Gobbi_Pharm2D.factory)
-            bits = list(fp.GetOnBits())
-            if len(bits) == 0:
-                on_bits_list.append(None)
-                invalid_indices.append(idx)
-            else:
-                on_bits_list.append(bits)
-        except Exception:
-            print(f"Error processing molecule at index {idx}")
-            on_bits_list.append(None)
-            invalid_indices.append(idx)
-
-    return on_bits_list, invalid_indices
-
-
-def generate_ngram_indices(
-    df: pd.DataFrame, smiles_col: str = "smiles", n: int = 3
-) -> List[List[int]]:
-    """Generate vocabulary-index lists from SMILES character n-grams for use as Doc2Vec tags.
-
-    Builds a shared n-gram vocabulary across all molecules and represents each
-    molecule as the indices of its present n-grams.
-
-    Args:
-        df: DataFrame with a column containing SMILES strings
-        smiles_col: Name of the SMILES column
-        n: n-gram window size
-
-    Returns:
-        List of index lists, one per molecule
-    """
-    smiles_list = list(df[smiles_col])
-    ngrams = [
-        [s] if len(s) < n else [s[i:i + n] for i in range(len(s) - n + 1)]
-        for s in smiles_list
-    ]
-    vectorizer = CountVectorizer(binary=True, analyzer=lambda x: x)
-    vec = vectorizer.fit_transform(ngrams)
-    return [
-        [j for j, val in enumerate(row) if val == 1]
-        for row in vec.toarray()
-    ]
-
-
-def create_index_mapping(df_length: int, invalid_indices: List[int]) -> Dict[int, int]:
-    """Map original DataFrame indices to filtered DataFrame indices (excluding invalid molecules).
-
-    Args:
-        df_length: Length of the original DataFrame
-        invalid_indices: Indices of molecules to exclude
-
-    Returns:
-        Dict mapping original index -> filtered index
-    """
-    mapping = {}
-    filtered_idx = 0
-    invalid_set = set(invalid_indices)
-    for orig_idx in range(df_length):
-        if orig_idx not in invalid_set:
-            mapping[orig_idx] = filtered_idx
-            filtered_idx += 1
-    return mapping
+if __name__ == "__main__":
+    main()

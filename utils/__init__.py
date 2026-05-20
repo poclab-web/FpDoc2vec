@@ -8,11 +8,11 @@ from .evaluation import (
     main_traintest,
 )
 from .doc2vec_utils import (
-    build_doc2vec_model,
-    fingerprints_to_vectors,
+    build_tagged_corpus
 )
 from .features import (
     generate_ecfp_fingerprints,
+    fingerprints_to_vectors
 )
 from .io import (
     load_pickle,
@@ -31,10 +31,10 @@ __all__ = [
     "evaluate_category_traintest",
     "main_traintest",
     # doc2vec
-    "build_doc2vec_model",
-    "fingerprints_to_vectors",
+    "build_tagged_corpus",
     # features
     "generate_ecfp_fingerprints",
+    "fingerprints_to_vectors", 
     # io
     "load_pickle",
     "save_pickle",

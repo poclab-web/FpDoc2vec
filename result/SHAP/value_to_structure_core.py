@@ -1,11 +1,13 @@
 import numpy as np
+import pandas as pd
 from rdkit import Chem
 from rdkit.Chem import AllChem, rdDepictor
 from rdkit.Chem.Draw import rdMolDraw2D
 from typing import Union, List, Tuple
 
 
-def _extract_shap_values(shap_values, compound_index: int) -> np.ndarray:
+def _extract_shap_values(shap_values: Union[np.ndarray, List, object], compound_index: int) -> np.ndarray:
+    """Extract a flat SHAP value array for a single compound from various SHAP output formats."""
     if hasattr(shap_values, 'values'):
         values = shap_values.values
     else:
@@ -19,6 +21,7 @@ def _extract_shap_values(shap_values, compound_index: int) -> np.ndarray:
         return values[compound_index].flatten()
 
 def _calculate_color(contribution: float, max_intensity: float = 1.0) -> Tuple[float, float, float]:
+    """Convert a SHAP contribution value to an RGB color (red=positive, blue=negative, gray=zero)."""
     if contribution == 0:
         return (0.8, 0.8, 0.8)  
     
@@ -29,7 +32,7 @@ def _calculate_color(contribution: float, max_intensity: float = 1.0) -> Tuple[f
         return (1-intensity, 1-intensity, 1) 
 
 def _calculate_auto_scale_factor(shap_array: np.ndarray, target_intensity: float = 1.0) -> float:
-    
+    """Compute a scale factor that maps the maximum absolute SHAP value to the target intensity."""
     shap_nonzero = shap_array[shap_array != 0]
     if len(shap_nonzero) == 0:
         return 1.0  
@@ -41,15 +44,16 @@ def _calculate_auto_scale_factor(shap_array: np.ndarray, target_intensity: float
 
 def visualize_shap_on_molecule(
     compound_name: str,
-    df, 
-    shap_values: Union[np.ndarray, List], 
-    radius,
-    nBits,
-    compound_column,
-    mol_column,
+    df: pd.DataFrame,
+    shap_values: Union[np.ndarray, List],
+    radius: int,
+    nBits: int,
+    compound_column: str,
+    mol_column: str,
     output: str,
     size: Tuple[int, int] = (300, 300),
 ) -> str:
+    """Map per-fingerprint-bit SHAP values onto atom colors and save an SVG structure image."""
     
     
     matching_rows = df[df[compound_column] == compound_name]
@@ -104,7 +108,6 @@ def visualize_shap_on_molecule(
                       atom_contributions[bond.GetEndAtomIdx()]) / 2
         bond_colors[bond.GetIdx()] = _calculate_color(avg_contrib)
     
-    # 分子を描画
     view = rdMolDraw2D.MolDraw2DSVG(size[0], size[1])
     view.drawOptions().addAtomIndices = False
     view.drawOptions().useBWAtomPalette()

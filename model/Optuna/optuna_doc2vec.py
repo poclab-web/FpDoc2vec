@@ -1,47 +1,45 @@
-import pickle
 import warnings
 from multiprocessing import Pool, cpu_count
+from typing import Any, Callable
 
 import matplotlib.pyplot as plt
 import numpy as np
 import optuna
 import optunahub
-from gensim.models.doc2vec import Doc2Vec, TaggedDocument
+import pandas as pd
+from gensim.models.doc2vec import Doc2Vec
+from optuna import Study, Trial
 from sklearn.exceptions import ConvergenceWarning
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import f1_score
 from sklearn.model_selection import StratifiedKFold
 from tqdm import tqdm
-
+from utils import (
+    CATEGORIES,
+    generate_ecfp_fingerprints,
+    build_tagged_corpus,
+    fingerprints_to_vectors,
+    load_pickle,
+    save_pickle,
+)
 warnings.filterwarnings("ignore", category=ConvergenceWarning)
 
 
-def compute_compound_vectors(fingerprint_df, model):
-    """Aggregate Doc2Vec tag vectors for each compound's fingerprint list."""
-    compound_vectors = []
-    for fingerprints in fingerprint_df:
-        vec = sum(model.dv.vectors[tag] for tag in fingerprints)
-        compound_vectors.append(vec)
-    return compound_vectors
-
-
-def process_single_fold(args):
+def process_single_fold(args: tuple[str, pd.DataFrame, dict[str, Any], np.ndarray, np.ndarray, int]) -> tuple[str, int, float, float]:
+    """Train a Doc2Vec model and evaluate a logistic regression classifier for one category and one cross-validation fold, returning train/test F1 scores."""
     category, train_df, params, train_idx, test_idx, fold_idx = args
 
-    y = np.array([1 if label == category else 0 for label in train_df[category]])
-    finger_list = list(train_df["fp_3_4096"])
+    y = (train_df[category] == category).astype(int).to_numpy()
+
+    finger_list = generate_ecfp_fingerprints(list(train_df["ROMol"]), radius=3, nBits=4096)[1]
 
     fold_train_df = train_df.iloc[train_idx]
-    fold_finger_list = list(fold_train_df["fp_3_4096"])
+    fold_finger_list = generate_ecfp_fingerprints(list(fold_train_df["ROMol"]), radius=3, n_bits=4096)[1]
 
-    descriptions = fold_train_df["description_gensim"].tolist()
-    tagged_documents = [
-        TaggedDocument(words=desc, tags=fold_finger_list[i])
-        for i, desc in enumerate(descriptions)
-    ]
+    corpus = build_tagged_corpus(fold_train_df, fold_finger_list, "description_gensim")
 
     model = Doc2Vec(
-        tagged_documents,
+        corpus,
         dm=params["dm"],
         vector_size=params["vector_size"],
         min_count=params["min_count"],
@@ -54,7 +52,7 @@ def process_single_fold(args):
         seed=0,
     )
 
-    X = np.array(compute_compound_vectors(finger_list, model))
+    X = fingerprints_to_vectors(finger_list, model)
     X_train, X_test = X[train_idx], X[test_idx]
     y_train, y_test = y[train_idx], y[test_idx]
 
@@ -67,11 +65,11 @@ def process_single_fold(args):
     return category, fold_idx, train_f1, test_f1
 
 
-def make_objective(train_df, categories):
-    """Return an Optuna objective that closes over training data and categories."""
+def make_objective(train_df: pd.DataFrame, categories: list[str]) -> Callable[[Trial], float]:
+    """Build and return an Optuna objective function that performs stratified k-fold cross-validation over all categories using multiprocessing."""
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=0)
 
-    def objective(trial):
+    def objective(trial: Trial) -> float:
         vector_size = trial.suggest_int("vector_size", 50, 150, step=10)
         dm = trial.suggest_categorical("dm", [0, 1])
         if dm == 0:  # DBOW
@@ -116,22 +114,26 @@ def make_objective(train_df, categories):
 
 
 class ProgressCallback:
-    def __init__(self, n_trials):
+    def __init__(self, n_trials: int) -> None:
+        """Initialize a tqdm progress bar for tracking Optuna optimization trials."""
         self.pbar = tqdm(total=n_trials, desc="Optimization Progress")
 
-    def __call__(self, study, trial):
+    def __call__(self, study: Study, trial: Trial) -> None:
+        """Update the progress bar with the current trial's train/test F1 scores."""
         self.pbar.update(1)
         self.pbar.set_postfix({
             "Best Test F1": f"{study.best_value:.4f}",
             "Trial Test F1": f"{trial.value:.4f}",
-            "Trial Train F1": f"{trial.user_attrs['train_f1']:.4f}",
+            "Trial Training F1": f"{trial.user_attrs['train_f1']:.4f}",
         })
 
-    def close(self):
+    def close(self) -> None:
+        """Close the progress bar."""
         self.pbar.close()
 
 
-def optimize_doc2vec(train_df, categories, n_trials, output_path):
+def optimize_doc2vec(train_df: pd.DataFrame, categories: list[str], n_trials: int, output_path: str) -> dict[str, Any]:
+    """Run Optuna hyperparameter optimization for Doc2Vec, plot the F1 score history, and return the best parameters."""
     module = optunahub.load_module(package="samplers/auto_sampler")
     study = optuna.create_study(direction="maximize", sampler=module.AutoSampler())
 
@@ -164,18 +166,15 @@ def optimize_doc2vec(train_df, categories, n_trials, output_path):
 
 
 if __name__ == "__main__":
-    CATEGORIES = [
-        "antioxidant", "anti_inflammatory_agent", "allergen", "dye",
-        "toxin", "flavouring_agent", "agrochemical", "volatile_oil",
-        "antibacterial_agent", "insecticide",
-    ]
+    data_path = "data/created_dataset/train_df.pkl"
+    optuna_optimization_history_path = "optuna_optimization_history_doc2vec.png"
+    best_params_path = "optuna_doc2vec_best_params.pkl"
 
-    with open("train_df.pkl", "rb") as f:
-        train_df = pickle.load(f)
-
+    train_df = load_pickle(data_path)
     best_params = optimize_doc2vec(
         train_df=train_df,
         categories=CATEGORIES,
         n_trials=500,
-        output_path="optuna_optimization_history_doc2vec.png",
+        output_path=optuna_optimization_history_path,
     )
+    save_pickle(best_params, best_params_path)

@@ -11,16 +11,7 @@ from .constants import CATEGORIES, METRIC_NAMES
 
 
 def calculate_metrics(y_true: np.ndarray, y_pred: np.ndarray, y_proba: np.ndarray) -> Dict[str, float]:
-    """Compute all classification metrics for a single prediction.
-
-    Args:
-        y_true: Ground-truth binary labels
-        y_pred: Predicted binary labels
-        y_proba: Predicted probabilities for the positive class
-
-    Returns:
-        Dict with keys: f1, mcc, balanced_accuracy, roc_auc, kappa, pr_auc
-    """
+    """Compute all classification metrics for a single prediction."""
     metrics = {}
     metrics['f1'] = f1_score(y_true, y_pred)
     metrics['mcc'] = matthews_corrcoef(y_true, y_pred)
@@ -33,16 +24,7 @@ def calculate_metrics(y_true: np.ndarray, y_pred: np.ndarray, y_proba: np.ndarra
 
 
 def _fit_and_score(classifier, X_train, X_test, y_train, y_test):
-    """Fit the model on training data and compute metrics for both train and test sets.
-
-    Args:
-        classifier: classifier instance
-        X_train, X_test: Feature matrices
-        y_train, y_test: Binary labels
-
-    Returns:
-        Tuple of (train_metrics, test_metrics), each a Dict[str, float]
-    """
+    """Fit the model on training data and compute metrics for both train and test sets."""
     classifier.fit(X_train, y_train)
     y_train_pred  = classifier.predict(X_train)
     y_test_pred   = classifier.predict(X_test)
@@ -56,16 +38,7 @@ def evaluate_category_cv(X_vec: np.ndarray,
                         y: np.ndarray,
                         classifier
                         ) -> Dict[str, Union[List[float], float]]:
-    """Evaluate a single category with 5-fold stratified cross-validation.
-
-    Args:
-        X_vec: Feature matrix for all samples
-        y: Binary labels for the category
-        classifier: classifier instance
-
-    Returns:
-        Dict[metric_name, {train_scores, test_scores, mean_train, mean_test}]
-    """
+    """Evaluate a single category with 5-fold stratified cross-validation."""
 
     all_train_scores = {m: [] for m in METRIC_NAMES}
     all_test_scores  = {m: [] for m in METRIC_NAMES}
@@ -90,16 +63,7 @@ def evaluate_category_cv(X_vec: np.ndarray,
 def main_cv(df: pd.DataFrame,
             X_vec: np.ndarray,
             classifier) -> Dict[str, Dict[str, float]]:
-    """Run cross-validation evaluation across all categories.
-
-    Args:
-        df: DataFrame containing binary label columns for each category
-        X_vec: Feature matrix for all samples
-        classifier: classifier instance
-
-    Returns:
-        Dict[category, evaluate_category_cv output]
-    """
+    """Run cross-validation evaluation across all categories."""
     results = {}
     for category in CATEGORIES:
         y = (df[category] == category).astype(int).to_numpy()
@@ -113,16 +77,7 @@ def evaluate_category_traintest(X_train_vec: np.ndarray,
                                 y_test: np.ndarray,
                                 classifier
                                 ) -> Dict[str, Union[List[float], float]]:
-    """Evaluate a single category on a fixed train/test split.
-
-    Args:
-        X_train_vec, X_test_vec: Feature matrices for train and test sets
-        y_train, y_test: Binary labels for the category
-        classifier: classifier instance
-
-    Returns:
-        Dict[metric_name, {train_score, test_score}]
-    """
+    """Evaluate a single category on a fixed train/test split."""
 
     train_metrics, test_metrics = _fit_and_score(classifier, X_train_vec, X_test_vec, y_train, y_test)
 
@@ -135,16 +90,7 @@ def main_traintest(train_df: pd.DataFrame,
                 X_test_vec: np.ndarray,
                 classifier) -> Dict[str, Dict[str, float]]:
     
-    """Run train/test evaluation across all categories.
-
-    Args:
-        train_df, test_df: DataFrames containing binary label columns for each category
-        X_train_vec, X_test_vec: Feature matrices for train and test sets
-        classifier: classifier instance
-
-    Returns:
-        Dict[category, evaluate_category_traintest output]
-    """
+    """Run train/test evaluation across all categories."""
     results = {}
     for category in CATEGORIES:
         y_train = (train_df[category] == category).astype(int).to_numpy()

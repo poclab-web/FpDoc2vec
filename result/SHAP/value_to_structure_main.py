@@ -1,7 +1,8 @@
 from result.SHAP.shapvalue_to_structure_core import visualize_shap_on_molecule
 from utils import load_pickle
 
-def main():
+def main() -> None:
+    """Load SHAP values and a compound dataset, then generate a SHAP-colored SVG structure image."""
     # Example usage with default values
     target_molecule_name = "quercetin" 
     shap_values_path = "antioxidant_fpdoc2vec.pkl"

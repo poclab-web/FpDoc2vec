@@ -3,14 +3,10 @@ import numpy as np
 from numpy.linalg import norm
 from IPython.display import display
 from typing import List
-
-
 from utils import CATEGORIES
 
-# Fp Doc2vec, Name Doc2vec
-
 def get_categories(df: pd.DataFrame, idx: int) -> str:
-    
+    """Return a comma-separated string of all category labels assigned to the compound at the given index."""
     found_categories = []
     for cat in CATEGORIES:
         if cat in df.columns and df.iat[idx, df.columns.get_loc(cat)] != 'No':
@@ -19,10 +15,12 @@ def get_categories(df: pd.DataFrame, idx: int) -> str:
 
 
 def cosine_similarity(vec1: np.ndarray, vec2: np.ndarray) -> float:
+    """Compute the cosine similarity between two vectors."""
     return np.dot(vec1, vec2) / (norm(vec1) * norm(vec2))
 
 
 def calculate_similarities(df: pd.DataFrame, vectors: np.ndarray, target_compound_name: str) -> List[float]:
+    """Compute cosine similarities between all compounds and the specified target compound."""
     try:
         
         target_indices = df[df["NAME"] == target_compound_name].index
@@ -40,8 +38,8 @@ def calculate_similarities(df: pd.DataFrame, vectors: np.ndarray, target_compoun
     except IndexError:
         raise ValueError(f"Compound '{target_compound_name}' not found in the dataset")
 
-def similarity_output(df, compound_vec:np.ndarray, target_compound: str, n: int) -> None:
-    
+def similarity_output(df: pd.DataFrame, compound_vec: np.ndarray, target_compound: str, n: int) -> None:
+    """Print the top-n most similar compounds to a target compound based on cosine similarity."""
     # Calculate similarities to sucrose
     df[target_compound] = calculate_similarities(df, compound_vec, target_compound)
     
@@ -64,11 +62,10 @@ def similarity_output(df, compound_vec:np.ndarray, target_compound: str, n: int)
         display(df.at[idx, 'ROMol'])
 
 
-
-
 # ECFP
 
-def calculate_tanimoto_similarities(df, fingerprint_array: np.ndarray, target_compound_name: str):
+def calculate_tanimoto_similarities(df: pd.DataFrame, fingerprint_array: np.ndarray, target_compound_name: str) -> np.ndarray:
+    """Compute Tanimoto similarity between all compounds and the specified target compound using binary fingerprints."""
     target_idx = df[df["NAME"] == target_compound_name].index[0]
     target_fp = fingerprint_array[target_idx]
     
@@ -78,8 +75,7 @@ def calculate_tanimoto_similarities(df, fingerprint_array: np.ndarray, target_co
     return similarities
     
 def tanimoto_similarity_output(df: pd.DataFrame, fingerprint_objects: List, target_compound: str, n: int = 10) -> None:
-
-    
+    """Print the top-n most similar compounds to a target compound based on Tanimoto similarity."""
     df[target_compound] = calculate_tanimoto_similarities(df, fingerprint_objects, target_compound)
     
     # Get top n similar compounds

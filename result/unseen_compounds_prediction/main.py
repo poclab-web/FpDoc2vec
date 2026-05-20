@@ -1,29 +1,27 @@
 
 from config import lightgbm_params as params
-from utils import load_data, save_pickle, generate_ecfp_fingerprints, fingerprints_to_vectors, main_traintest
+from utils import load_data, save_pickle, generate_ecfp_fingerprints, fingerprints_to_vectors, main_traintest, make_descriptor
 from gensim.models import Doc2vec
 import lightgbm as lgb
 
-def main():
+def main() :
+    """Evaluate FpDoc2Vec, ECFP, and descriptor features on unseen compounds using a train/test split."""
     # Example paths - replace with actual paths
     train_df_path = "data/created_dataset/train_df.pkl"
     test_df_path = "data/created_dataset/test_df.pkl"
     train_desc_df = "data/Descriptor/train_desc_df.pkl"
     test_desc_df = "data/Descriptor/test_desc_df.pkl"
+    fpmodel_path = "model/Doc2Vec_training/fpdoc2vec.model"
 
     fp_result_pathname = "fpdoc2vec_results.pkl" 
     ecfp_result_pathname = "ecfp_results.pkl"
     descriptor_result_pathname = "descriptors_results.pkl"
 
-    fpmodel_path = "fpdoc2vec.model"
-
-
     # Load data
     train_df, test_df = load_data(train_df_path), load_data(test_df_path)
     train_desc_df, test_desc_df = load_data(train_desc_df), load_data(test_desc_df)
-
-    train_fp, train_bit_list = generate_ecfp_fingerprints(train_df["ROMol"], radius=3, n_bits=4096)
-    test_fp, test_bit_list = generate_ecfp_fingerprints(test_df["ROMol"], radius=3, n_bits=4096)
+    train_fp, train_bit_list = generate_ecfp_fingerprints(list(train_df["ROMol"]), radius=3, n_bits=4096)
+    test_fp, test_bit_list = generate_ecfp_fingerprints(list(test_df["ROMol"]), radius=3, n_bits=4096)
 
     # Create classifier
     lightgbm_model: lgb.LGBMClassifier = lgb.LGBMClassifier(**params)

@@ -1,5 +1,3 @@
-import pickle
-
 import numpy as np
 import pandas as pd
 import lightgbm as lgb
@@ -7,16 +5,12 @@ import shap
 from gensim.models import Doc2Vec
 
 from config.lightgbm_params import gbm_params
-from utils import generate_ecfp_fingerprints, save_pickle  
+from utils import generate_ecfp_fingerprints, save_pickle, load_pickle
 from shap_core import calculate_shap_values, shap_variables
 
 
-
-def main_ecfp(df: pd.DataFrame, purpose: str, output_path: str, max_evals: int = None) -> None:
-
-    y = (df[purpose] == purpose).astype(int).to_numpy()
-    fingerprints = generate_ecfp_fingerprints(df["ROMol"], radius=3, n_bits=4096)[0]
-
+def main_ecfp(fingerprints: np.ndarray, y: np.ndarray, output_path: str, max_evals: int = None) -> None:
+    """Train a LightGBM model on ECFP fingerprints and save the resulting SHAP values."""
     model = lgb.LGBMClassifier(**gbm_params)
     model.fit(fingerprints, y)
 
@@ -24,13 +18,8 @@ def main_ecfp(df: pd.DataFrame, purpose: str, output_path: str, max_evals: int =
     save_pickle(shap_values, output_path)
 
 
-def main_fpdoc2vec(input_path: str, purpose: str, model: Doc2Vec, output_path: str, max_evals: int = 500000) -> None:
-    with open(input_path, "rb") as f:
-        df = pickle.load(f)
-
-    y = np.array([1 if i == purpose else 0 for i in df[purpose]])
-    fingerprints = generate_ecfp_fingerprints(df["ROMol"], radius=3, n_bits=4096)[0]
-
+def main_fpdoc2vec(fingerprints: np.ndarray, y: np.ndarray, model: Doc2Vec, output_path: str, max_evals: int = 500000) -> None:
+    """Train a LightGBM pipeline with FpDoc2Vec embeddings and save the resulting SHAP values."""
     lightgbm_model = lgb.LGBMClassifier(**gbm_params)
     pipeline, masker = shap_variables(model.dv.vectors, lightgbm_model, mask='xor')
     pipeline.fit(fingerprints, y)
@@ -42,9 +31,17 @@ def main_fpdoc2vec(input_path: str, purpose: str, model: Doc2Vec, output_path: s
 
 
 if __name__ == "__main__":
-    input_path="data/created_dataset/train_df.pkl"
-    purpose="antioxidant"
-    ecfp_output_path="antioxidant_ecfp.pkl"
-    fpdoc2vec_output_path="antioxidant_fpdoc2vec.pkl"
-    main_ecfp(input_path, purpose, ecfp_output_path)
-    main_fpdoc2vec(input_path, purpose, fpdoc2vec_output_path, max_evals=50000)
+    purpose = "antioxidant"
+    data_path = "data/created_dataset/train_df.pkl"
+    ecfp_shap_result_path = "antioxidant_ecfp.pkl"
+    fpdoc2vec_shap_result_path = "antioxidant_fpdoc2vec.pkl"
+    fpdoc2ec_path = "model/Doc2Vec_training/fpdoc2vec.model"
+
+    df = load_pickle(data_path)
+    y = (df[purpose] == purpose).astype(int).to_numpy()
+    fingerprints = generate_ecfp_fingerprints(list(df["ROMol"]), radius=3, n_bits=4096)[0]
+    # calculate SHAP values for ECFP
+    main_ecfp(fingerprints, y, ecfp_shap_result_path)
+    # calculate SHAP values for FpDoc2Vec
+    doc2vec_model = Doc2Vec.load(fpdoc2ec_path)
+    main_fpdoc2vec(fingerprints, y, doc2vec_model, fpdoc2vec_shap_result_path, max_evals=50000)
